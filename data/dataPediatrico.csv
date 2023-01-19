@@ -1,0 +1,107 @@
+﻿YEAR,TIPO,SEXO,DIAGNOSTICO,CASOS
+2019,solido,hombre,Astrocitoma,3
+2019,solido,hombre,Carcinoma nasofaríngeo,1
+2019,solido,hombre,Condrosarcoma ,0
+2019,solido,hombre,Fibrosarcoma ,1
+2019,solido,hombre,Ganglioma bulbo-espinal ,1
+2019,solido,hombre,Ganglioneuroma de mediastino posterior,0
+2019,solido,hombre,Glioblastoma ,0
+2019,solido,hombre,Histiocitoma maligno,0
+2019,solido,hombre,Neuroblastoma,2
+2019,solido,hombre,Osteosarcoma,1
+2019,solido,hombre,Retinoblastoma ,1
+2019,solido,hombre,Sarcoma de Ewing,1
+2019,solido,hombre,Tumor de Wilms,1
+2019,solido,mujer,Astrocitoma,3
+2019,solido,mujer,Carcinoma nasofaríngeo,0
+2019,solido,mujer,Condrosarcoma ,1
+2019,solido,mujer,Fibrosarcoma ,0
+2019,solido,mujer,Ganglioma bulbo-espinal ,0
+2019,solido,mujer,Ganglioneuroma de mediastino posterior,1
+2019,solido,mujer,Glioblastoma ,1
+2019,solido,mujer,Histiocitoma maligno,1
+2019,solido,mujer,Neuroblastoma,0
+2019,solido,mujer,Osteosarcoma,1
+2019,solido,mujer,Retinoblastoma ,0
+2019,solido,mujer,Sarcoma de Ewing,0
+2019,solido,mujer,Tumor de Wilms,0
+2019,liquido,hombre,Leucemia linfoblástica Aguda ,0
+2019,liquido,hombre,Linfoma Hodgkin ,2
+2019,liquido,hombre,Linfoma no Hodgkin ,1
+2019,liquido,mujer,Leucemia linfoblástica Aguda ,2
+2019,liquido,mujer,Linfoma Hodgkin ,2
+2019,liquido,mujer,Linfoma no Hodgkin ,0
+2020,solido,hombre,Astrocitoma difuso grado I GBG,1
+2020,solido,hombre,Carcinoma Epidermoide ,2
+2020,solido,hombre,Cáncer de tiroide,0
+2020,solido,hombre,Ganglioneuroma  ,0
+2020,solido,hombre,Glioma,1
+2020,solido,hombre,Hepatoblastoma,0
+2020,solido,hombre,Neuroblastoma ,1
+2020,solido,hombre,Osteosarcoma,1
+2020,solido,hombre,PNET/SNC,2
+2020,solido,hombre,Retinoblastoma,0
+2020,solido,hombre,Sarcoma Pleomorfico,0
+2020,solido,hombre,Tumor miofibroblastico inflamatorio ,1
+2020,solido,mujer,Astrocitoma difuso grado I GBG,1
+2020,solido,mujer,Carcinoma Epidermoide ,0
+2020,solido,mujer,Cáncer de tiroide,1
+2020,solido,mujer,Ganglioneuroma  ,1
+2020,solido,mujer,Glioma,1
+2020,solido,mujer,Hepatoblastoma,1
+2020,solido,mujer,Neuroblastoma ,0
+2020,solido,mujer,Osteosarcoma,1
+2020,solido,mujer,PNET/SNC,2
+2020,solido,mujer,Retinoblastoma,2
+2020,solido,mujer,Sarcoma Pleomorfico,2
+2020,solido,mujer,Tumor miofibroblastico inflamatorio ,0
+2020,liquido,hombre,Histiocitosis ,0
+2020,liquido,hombre,Histiocitosis de Langerhans ,0
+2020,liquido,hombre,Lecuemia Linfoblastica Aguda PREB BR,0
+2020,liquido,hombre,Lecuemia Mieloblastica Aguda,1
+2020,liquido,hombre,Linfoma de celulas B,0
+2020,liquido,hombre,Linfoma Hodgkin,0
+2020,liquido,hombre,Linfoma Linfoblastico,0
+2020,liquido,hombre,Linfoma no Hodgkin,0
+2020,liquido,mujer,Histiocitosis ,1
+2020,liquido,mujer,Histiocitosis de Langerhans ,1
+2020,liquido,mujer,Lecuemia Linfoblastica Aguda PREB BR,1
+2020,liquido,mujer,Lecuemia Mieloblastica Aguda,0
+2020,liquido,mujer,Linfoma de celulas B,1
+2020,liquido,mujer,Linfoma Hodgkin,1
+2020,liquido,mujer,Linfoma Linfoblastico,1
+2020,liquido,mujer,Linfoma no Hodgkin,1
+2021,solido,hombre,Astrocitoma,1
+2021,solido,hombre,Cáncer de piel,2
+2021,solido,hombre,Glioma ,0
+2021,solido,hombre,Meduloblastoma,1
+2021,solido,hombre,Neoplasia fibromixoide de bajo grado,1
+2021,solido,hombre,Neoplasia maligna epitelioide del SNC,0
+2021,solido,hombre,Osteosarcoma,1
+2021,solido,hombre,Rabdomiosarcoma,1
+2021,solido,hombre,Retinoblastoma ,0
+2021,solido,hombre,Tumor neuroectodérmico Primitivo,1
+2021,solido,mujer,Astrocitoma,0
+2021,solido,mujer,Cáncer de piel,2
+2021,solido,mujer,Glioma ,1
+2021,solido,mujer,Meduloblastoma,0
+2021,solido,mujer,Neoplasia fibromixoide de bajo grado,0
+2021,solido,mujer,Neoplasia maligna epitelioide del SNC,1
+2021,solido,mujer,Osteosarcoma,1
+2021,solido,mujer,Rabdomiosarcoma,0
+2021,solido,mujer,Retinoblastoma ,4
+2021,solido,mujer,Tumor neuroectodérmico Primitivo,0
+2021,liquido,hombre,Leucemia granulocítica crónica,0
+2021,liquido,hombre,Leucemia linfoblástica,2
+2021,liquido,hombre,Leucemia linfoblastica aguda,0
+2021,liquido,hombre,Leucemia mieloide ,2
+2021,liquido,hombre,Linfoma de burkitt,0
+2021,liquido,hombre,Linfoma de hodgkin,1
+2021,liquido,hombre,Linfoma linfoblastico tipo b,0
+2021,liquido,mujer,Leucemia granulocítica crónica,1
+2021,liquido,mujer,Leucemia linfoblástica,0
+2021,liquido,mujer,Leucemia linfoblastica aguda,0
+2021,liquido,mujer,Leucemia mieloide ,0
+2021,liquido,mujer,Linfoma de burkitt,1
+2021,liquido,mujer,Linfoma de hodgkin,1
+2021,liquido,mujer,Linfoma linfoblastico tipo b,1

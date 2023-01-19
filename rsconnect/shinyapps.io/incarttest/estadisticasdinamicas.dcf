@@ -1,0 +1,11 @@
+name: estadisticasdinamicas
+title:
+username:
+account: incarttest
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 8048097
+bundleId: 6751423
+url: https://incarttest.shinyapps.io/estadisticasdinamicas/
+when: 1674135292.63717
+lastSyncTime: 1674135292.63719
