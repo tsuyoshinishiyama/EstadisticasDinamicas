@@ -1,16 +1,16 @@
 #
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
 #
-# Find out more about building applications with Shiny here:
 #
-#    http://shiny.rstudio.com/
+#
+#
+#
+#
 #
 
 library(shiny)
 library(tidyverse)
 library(leaflet)
-library(rgdal)
+library(sf)
 library(png)
 library("formattable")
 
@@ -20,272 +20,266 @@ dataLocalizacion <- read.csv("data/dataLocalizacion.csv")
 dataHombreMujer <- read.csv("data/dataHombreMujer.csv")
 dataPediatrico <- read.csv("data/dataPediatrico.csv")
 
-# Define UI for application that draws a histogram
 ui <- fluidPage(
 
-    # Application title
-    titlePanel("Estadísticas Dinámicas"),
+  # Application title
+  titlePanel("Estadísticas Dinámicas"),
     
-    tabsetPanel(type = "tabs",
+  tabsetPanel(type = "tabs",
                 
-                ######################################################
-                #  provinciales
-                ######################################################
-                tabPanel(
-                  title = "Estadísticas provinciales",
-                  icon = icon("map-location-dot"),
-                  sidebarLayout(
-                    sidebarPanel(
-                      selectInput("in_map_year", "Año:", multiple = TRUE,
-                                  list("2017", "2018", "2019", "2020", "2021"),
-                                  list("2017", "2018", "2019", "2020", "2021")
-                      ),
-                      selectInput("in_map_sexo", "Sexo(Aplicar sólo por provincia):", multiple = TRUE,
-                                  list("hombre", "mujer"),
-                                  list("hombre", "mujer")
-                      ),
-                      checkboxGroupInput("in_map_prov",
-                                         "Provincia:",
-                                         choices = unique(dataEstadioClinico$TOPONIMIA),
-                                         selected = unique(dataEstadioClinico$TOPONIMIA),
-                                         inline = TRUE),
-                      
-                      downloadButton("downloadDataProvincia", "Download:Cuadro1"),
-                      downloadButton("downloadDataEstadio", "Download:Cuadro2")
-                    ),
-                    mainPanel(
-                      fluidRow(
-                        column(12,
-                               h4("Total de casos por provincia"),
-                               leafletOutput("mymap",height = 300)
-                        ),
-                        fluidRow(
-                          column(12,
-                                 h4("Total de casos según provincia y estadio"),
-                                 plotOutput("out_EstadioClinico"),
-                          )
-                        ),
-                        fluidRow(
-                          column(6,
-                                 h4("Cuadro1:Total de casos por provincia"),
-                                 tableOutput("out_table_Provincia")
-                          ),
-                          column(6,
-                                 h4("Cuadro2:Total de casos según provincia y estadio"),
-                                 tableOutput("out_table_Estadio")
-                          ),
-                        )
-                      )
-                    )
-                  )
-                ),
-                ######################################################
-                #  Sexo y Grupo Etario
-                ######################################################
-                tabPanel(
-                  title = "Estadísticas según Sexo y Grupo Etario",
-                  icon = icon("chart-simple"),
-                  # Sidebar with a slider input for number of bins 
-                  sidebarLayout(
-                    sidebarPanel(
-                      selectInput("in_hm_year", "Año:", multiple = TRUE,
-                                  list("2017", "2018", "2019", "2020", "2021"),
-                                  list("2017", "2018", "2019", "2020", "2021")
-                      ),
-                      selectInput("in_hm_sexo", "Sexo:", multiple = TRUE,
-                                  list("hombre", "mujer"),
-                                  list("hombre", "mujer")
-                      ),
-                      selectInput("in_hm_etario", "Etario:", multiple = TRUE,
-                                  list("80 <", "70-79", "60-69", "50-59", "40-49", "30-39", "20-29", "10-19", "0-9"),
-                                  list("80 <", "70-79", "60-69", "50-59", "40-49", "30-39", "20-29", "10-19", "0-9")
-                      ),
-                      downloadButton("downloadDataHombreMujer", "Download")
-                    ),
+    ######################################################
+    #  provinciales
+    ######################################################
+    tabPanel(
+      title = "Estadísticas provinciales",
+      icon = icon("map-location-dot"),
+      sidebarLayout(
+        sidebarPanel(
+          selectInput("in_map_year", "Año:", multiple = TRUE,
+                      list("2017", "2018", "2019", "2020", "2021"),
+                      list("2017", "2018", "2019", "2020", "2021")
+          ),
+          selectInput("in_map_sexo", "Sexo(Aplicar sólo por provincia):", multiple = TRUE,
+                      list("hombre", "mujer"),
+                      list("hombre", "mujer")
+          ),
+          checkboxGroupInput("in_map_prov", "Provincia:", inline = TRUE,
+                             choices = unique(dataEstadioClinico$TOPONIMIA),
+                             selected = unique(dataEstadioClinico$TOPONIMIA),
+          ),
+          downloadButton("downloadDataProvincia", "Download:Cuadro1"),
+          downloadButton("downloadDataEstadio", "Download:Cuadro2")
+        ),
+        mainPanel(
+          fluidRow(
+            column(12,
+                   h4("Total de casos por provincia"),
+                   leafletOutput("mymap",height = 300)
+            ),
+            fluidRow(
+              column(12,
+                     h4("Total de casos según provincia y estadio"),
+                     plotOutput("out_EstadioClinico"),
+              )
+            ),
+            fluidRow(
+              column(6,
+                     h4("Cuadro1:Total de casos por provincia"),
+                     tableOutput("out_table_Provincia")
+              ),
+              column(6,
+                     h4("Cuadro2:Total de casos según provincia y estadio"),
+                     tableOutput("out_table_Estadio")
+              ),
+            )
+          )
+        )
+      )
+    ),
+    ######################################################
+    #  Sexo y Grupo Etario
+    ######################################################
+    tabPanel(
+      title = "Estadísticas según Sexo y Grupo Etario",
+      icon = icon("chart-simple"),
+      sidebarLayout(
+        sidebarPanel(
+          selectInput("in_hm_year", "Año:", multiple = TRUE,
+                      list("2017", "2018", "2019", "2020", "2021"),
+                      list("2017", "2018", "2019", "2020", "2021")
+          ),
+          selectInput("in_hm_sexo", "Sexo:", multiple = TRUE,
+                      list("hombre", "mujer"),
+                      list("hombre", "mujer")
+          ),
+          selectInput("in_hm_etario", "Etario:", multiple = TRUE,
+                      list("80 <", "70-79", "60-69", "50-59", "40-49", "30-39", "20-29", "10-19", "0-9"),
+                      list("80 <", "70-79", "60-69", "50-59", "40-49", "30-39", "20-29", "10-19", "0-9")
+          ),
+          downloadButton("downloadDataHombreMujer", "Download")
+        ),
                     
-                    # Show a plot of the generated distribution
-                    mainPanel(
-                      #fluidRow(
-                      #  column(12,div(style = "height:30px;"))
-                      #),
-                      fluidRow(
-                        column(width=6,
-                               align="center",
-                        ),
-                        column(width=6,
-                               align="center",
-                        )
-                      ),
-                      fluidRow(
-                        column(width=12,
-                               h4("Total de casos por sexo"),
-                               plotOutput("distPlot")
-                        )
-                      ),
-                      fluidRow(
-                        column(width=12,
-                               h4("Cuadro:Total de casos por sexo"),
-                               tableOutput("disttable")
-                        )
-                      )
-                    )
-                  )
-                ),
-                ######################################################
-                #  Topográficas
-                ######################################################
-                tabPanel(
-                  title = "Estadísticas Topográficas",
-                  icon = icon("person"),
-                         sidebarLayout(
-                           sidebarPanel(
-                             selectInput("in_local_year", "Año:", multiple = TRUE,
-                                         list("2019", "2020", "2021"),
-                                         list("2019", "2020", "2021")
-                             ),
-                             selectInput("in_local_sexo", "Sexo:", multiple = TRUE,
-                                         list("hombre", "mujer"),
-                                         list("hombre", "mujer")
-                             ),
-                             selectInput("in_local_localizacion", "Localización:", multiple = TRUE,
-                                         choices = unique(dataLocalizacion$LOCALIZACION),
-                                         selected = unique(dataLocalizacion$LOCALIZACION)
-                              ),
-                             downloadButton("downloadDataLocalizacion", "Download:Cuadro"),
-                           ),
-                           mainPanel(
-                             fluidRow(
-                               column(12,
-                                      h4("Total de casos por sexo ")
-                                      )
-                             ),
-                             fluidRow(
-                               column(width=6,
-                                      align="center",
-                                      img(src = "male.png",
-                                         alt = "male",
-                                         width = 100,
-                                         height = 100
-                                      ),
-                                      h2(textOutput("out_text_hombre")),
-                                      h4("Hombres"),
-                               ),
-                               column(width=6,
-                                      align="center",
-                                      img(src = "female.png",
-                                           alt = "female",
-                                           width = 100,
-                                           height = 100
-                                      ),
-                                      h2(textOutput("out_text_mujer")),
-                                      h4("Mujeres")
-                               )
-                             ),
-                              fluidRow(
-                                column(12,
-                                        align="top",
-                                        h4("Top 10"),
-                                        plotOutput("out_plot_localizacion")
-                                 )
-                               ),
-                             fluidRow(
-                                 column(12,
-                                        h4("Cuadro"),
-                                        tableOutput("out_table_localizacion")
-                                 )
-                               )
-                           )
-                         )
-                ),
-                ######################################################
-                #  Pediatricos
-                ######################################################
-                tabPanel(
-                  title = "Estadísticas Pediátricas",
-                  icon = icon("child"),
-                  sidebarLayout(
-                    sidebarPanel(
-                      selectInput("in_pediatrico_year", "Año:", multiple = TRUE,
-                                  list("2019", "2020", "2021"),
-                                  list("2019", "2020", "2021")
-                      ),
-                      selectInput("in_pediatrico_sexo", "Sexo:", multiple = TRUE,
-                                  list("hombre", "mujer"),
-                                  list("hombre", "mujer")
-                      ),
-                      selectInput("in_pediatrico_diagnostico_solido", "Diagnóstico de solido:", multiple = TRUE,
-                                  choices = unique(filter(dataPediatrico, TIPO == "solido") %>% select(DIAGNOSTICO)),
-                                  selected = unique(dataPediatrico$DIAGNOSTICO)
-                      ),
-                      selectInput("in_pediatrico_diagnostico_liquido", "Diagnóstico de liquido:", multiple = TRUE,
-                                  choices = unique(filter(dataPediatrico, TIPO == "liquido") %>% select(DIAGNOSTICO)),
-                                  selected = unique(dataPediatrico$DIAGNOSTICO)
-                      ),
-                      downloadButton("downloadDataPediatricoSolido", "Download:Cuadro1"),
-                      downloadButton("downloadDataPediatricoLiquido", "Download:Cuadro2")
-                    ),
-                    mainPanel(
-                      fluidRow(
-                        column(12,
-                               h4("Total de casos por sexo ")
-                        )
-                      ),
-                      fluidRow(
-                        column(width=4,
-                               align="center",
-                               img(src = "boy.png",
-                                   alt = "boy",
-                                   width = 60,
-                                   height = 100
-                               ),
-                               h2(textOutput("out_text_boy")),
-                               h4("Niños"),
-                        ),
-                        column(width=4,
-                               align="center",
-                               img(src = "girl.png",
-                                   alt = "girl",
-                                   width = 60,
-                                   height = 100
-                               ),
-                               h2(textOutput("out_text_girl")),
-                               h4("Niñas")
-                        ),
-                        column(width=4,
-                               align="center",
-                               plotOutput("out_plot_pediatrico_boygirl", height="120px"),
-                               h2(textOutput("out_text_donut"))
-                        )
-                      ),
-                      fluidRow(
-                        column(6,
-                               align="center",
-                               h4("Total de casos de diagnosticos solidos"),
-                               plotOutput("out_plot_pediatrico_solido")
-                        ),
-                        column(6,
-                               align="center",
-                               h4("Total de casos de diagnosticos liquidos"),
-                               plotOutput("out_plot_pediatrico_liquido")
-                        )
-                      ),
-                      fluidRow(
-                        column(6,
-                               h4("Cuadro1:Total de casos de diagnosticos solidos"),
-                               tableOutput("out_table_pediatrico_solido")
-                        ),
-                        column(6,
-                               h4("Cuadro2:Total de casos de diagnosticos liquidos"),
-                               tableOutput("out_table_pediatrico_liquido")
-                        )
-                      )
-                    )
-                  )
-                )
+        mainPanel(
+          #fluidRow(
+          #  column(12,div(style = "height:30px;"))
+          #),
+          fluidRow(
+            column(width=6,
+                   align="center",
+            ),
+            column(width=6,
+                   align="center",
+            )
+          ),
+          fluidRow(
+            column(width=12,
+                   h4("Total de casos por sexo"),
+                   plotOutput("distPlot")
+            )
+          ),
+          fluidRow(
+            column(width=12,
+                   h4("Cuadro:Total de casos por sexo"),
+                   tableOutput("disttable")
+            )
+          )
+        )
+      )
+    ),
+    ######################################################
+    #  Topográficas
+    ######################################################
+    tabPanel(
+      title = "Estadísticas Topográficas",
+      icon = icon("person"),
+      sidebarLayout(
+        sidebarPanel(
+          selectInput("in_local_year", "Año:", multiple = TRUE,
+                      list("2019", "2020", "2021"),
+                      list("2019", "2020", "2021")
+          ),
+          selectInput("in_local_sexo", "Sexo:", multiple = TRUE,
+                      list("hombre", "mujer"),
+                      list("hombre", "mujer")
+          ),
+          selectInput("in_local_localizacion", "Localización:", multiple = TRUE,
+                      choices = unique(dataLocalizacion$LOCALIZACION),
+                      selected = unique(dataLocalizacion$LOCALIZACION)
+          ),
+          downloadButton("downloadDataLocalizacion", "Download:Cuadro")
+        ),
+        mainPanel(
+          fluidRow(
+            column(12,
+                   h4("Total de casos por sexo ")
+            )
+          ),
+          fluidRow(
+            column(width=6,
+                   align="center",
+                   img(src = "male.png",
+                   alt = "male",
+                   width = 100,
+                   height = 100
+                   ),
+                   h2(textOutput("out_text_hombre")),
+                   h4("Hombres"),
+            ),
+            column(width=6,
+                   align="center",
+                   img(src = "female.png",
+                   alt = "female",
+                   width = 100,
+                   height = 100
+                   ),
+                   h2(textOutput("out_text_mujer")),
+                   h4("Mujeres")
+            )
+          ),
+          fluidRow(
+            column(12,
+                   align="top",
+                   h4("Top 10"),
+                   plotOutput("out_plot_localizacion")
+            )
+          ),
+          fluidRow(
+            column(12,
+                   h4("Cuadro"),
+                   tableOutput("out_table_localizacion")
+            )
+          )
+        )
+      )
+    ),
+    ######################################################
+    #  Pediatricos
+    ######################################################
+    tabPanel(
+      title = "Estadísticas Pediátricas",
+      icon = icon("child"),
+      sidebarLayout(
+        sidebarPanel(
+          selectInput("in_pediatrico_year", "Año:", multiple = TRUE,
+                      list("2019", "2020", "2021"),
+                      list("2019", "2020", "2021")
+          ),
+          selectInput("in_pediatrico_sexo", "Sexo:", multiple = TRUE,
+                      list("hombre", "mujer"),
+                      list("hombre", "mujer")
+          ),
+          selectInput("in_pediatrico_diagnostico_solido", "Diagnóstico de solido:", multiple = TRUE,
+                      choices = unique(filter(dataPediatrico, TIPO == "solido") %>% select(DIAGNOSTICO)),
+                      selected = unique(dataPediatrico$DIAGNOSTICO)
+          ),
+          selectInput("in_pediatrico_diagnostico_liquido", "Diagnóstico de liquido:", multiple = TRUE,
+                      choices = unique(filter(dataPediatrico, TIPO == "liquido") %>% select(DIAGNOSTICO)),
+                      selected = unique(dataPediatrico$DIAGNOSTICO)
+          ),
+          downloadButton("downloadDataPediatricoSolido", "Download:Cuadro1"),
+          downloadButton("downloadDataPediatricoLiquido", "Download:Cuadro2")
+        ),
+        mainPanel(
+          fluidRow(
+            column(12,
+                   h4("Total de casos por sexo ")
+            )
+          ),
+          fluidRow(
+            column(width=4,
+                   align="center",
+                   img(src = "boy.png",
+                   alt = "boy",
+                   width = 60,
+                   height = 100
+                   ),
+                   h2(textOutput("out_text_boy")),
+                   h4("Niños"),
+            ),
+            column(width=4,
+                   align="center",
+                   img(src = "girl.png",
+                   alt = "girl",
+                   width = 60,
+                   height = 100
+                   ),
+                   h2(textOutput("out_text_girl")),
+                   h4("Niñas")
+            ),
+            column(width=4,
+                   align="center",
+                   plotOutput("out_plot_pediatrico_boygirl", height="120px"),
+                   h2(textOutput("out_text_donut"))
+            )
+          ),
+          fluidRow(
+            column(6,
+                   align="center",
+                   h4("Total de casos de diagnosticos solidos"),
+                   plotOutput("out_plot_pediatrico_solido")
+            ),
+            column(6,
+                   align="center",
+                   h4("Total de casos de diagnosticos liquidos"),
+                   plotOutput("out_plot_pediatrico_liquido")
+            )
+          ),
+          fluidRow(
+            column(6,
+                   h4("Cuadro1:Total de casos de diagnosticos solidos"),
+                   tableOutput("out_table_pediatrico_solido")
+            ),
+            column(6,
+                   h4("Cuadro2:Total de casos de diagnosticos liquidos"),
+                   tableOutput("out_table_pediatrico_liquido")
+            )
+          )
+        )
+      )
     )
+  )
 )
 
-# Define server logic required to draw a histogram
 server <- function(input, output, session) {
 
   ######################################################
@@ -307,7 +301,7 @@ server <- function(input, output, session) {
     
     ggplot(df, aes(x = x, y = y, fill = sexo)) +
       geom_bar(position = "stack", stat = "identity") + 
-      xlab("Diagnóstico de solido") +
+      xlab("Diagnóstico de sólido") +
       ylab("Casos") +
       theme_bw(base_size = 13) +
       scale_fill_manual("", values = c("hombre" = "#5B9BD5", "mujer" = "#ED7D31")) + 
@@ -331,7 +325,7 @@ server <- function(input, output, session) {
     
     ggplot(df, aes(x = x, y = y, fill = sexo)) +
       geom_bar(position = "stack", stat = "identity") + 
-      xlab("Diagnóstico de liquido") +
+      xlab("Diagnóstico de líquido") +
       ylab("Casos") +
       theme_bw(base_size = 13) +
       scale_fill_manual("", values = c("hombre" = "#5B9BD5", "mujer" = "#ED7D31")) + 
@@ -352,8 +346,6 @@ server <- function(input, output, session) {
   
   output$out_plot_pediatrico_boygirl <- renderPlot({
     
-    #dataPediatricoTotal <- dataPediatricoTotal()
-    
     dataPediatricoTotalBoy <- dataPediatricoTotal() %>%
       filter(SEXO == "hombre")
     
@@ -373,7 +365,6 @@ server <- function(input, output, session) {
               ifelse(length(dataPediatricoTotalBoy$total_val) == 0, 0, dataPediatricoTotalBoy$total_val))
     )
     
-    #output$out_text_donut <- renderText(ifelse(length(dataPediatricoTotalBoy$total_val) == 0, 1, 2))
     
     # Compute percentages
     data$fraction <- data$count / sum(data$count)
@@ -454,7 +445,6 @@ server <- function(input, output, session) {
     dataLocalizacionNew()
   })
   
-  
   output$downloadDataLocalizacion <- downloadHandler(
     filename = function() {
       "Cuadro.csv"
@@ -513,16 +503,14 @@ server <- function(input, output, session) {
       theme(legend.position = "none")
   })
   
-  
   ######################################################
   #  provinciales
   ######################################################
   output$mymap <- renderLeaflet({
     
-    map_region <- readOGR(dsn = "data/PROVCenso2010.shp")
+    map_region_org <-  st_read("data/PROVCenso2010.shp")
     
-    map_region <- spTransform(map_region, CRS("+proj=longlat +datum=WGS84"))
-    
+    map_region <- st_transform(map_region_org, crs = "+proj=longlat +datum=WGS84")
 
     dataProv <- dataProv %>%
       filter(TOPONIMIA %in% input$in_map_prov) %>%
@@ -533,11 +521,11 @@ server <- function(input, output, session) {
       mutate(TOPONIMIA = toupper(TOPONIMIA)) %>%
       select(TOPONIMIA, TOTAL_CASOS)
     
-    map_region@data <- map_region@data %>%
+    map_region <- map_region %>%
       left_join(dataProv) %>%
       mutate(TOTAL_CASOS = ifelse(is.na(TOTAL_CASOS), 0, TOTAL_CASOS))
     
-    paleta_de_color <- colorNumeric("Blues", NULL, n = nrow(map_region@data))
+    paleta_de_color <- colorNumeric("Blues", NULL, n = nrow(map_region))
     pal <- colorNumeric(palette="Blues", domain=map_region$TOTAL_CASOS)
     
     region_popup <- paste0(
@@ -546,6 +534,7 @@ server <- function(input, output, session) {
       "<br><strong>Casos: </strong>",
       format(map_region$TOTAL_CASOS, big.mark = ",")
     )
+    
     
     leaflet(data = map_region) %>%
       addTiles() %>%
@@ -630,7 +619,6 @@ server <- function(input, output, session) {
   ######################################################
   #  Sexo y Grupo Etario
   ######################################################
-  
   dataHombreMujerNew <- reactive({
     dataHombreMujerNew <- dataHombreMujer %>% 
       filter(YEAR %in% input$in_hm_year) %>%
