@@ -164,7 +164,8 @@ ui <- fluidPage(
                    height = 100
                    ),
                    h2(textOutput("out_text_hombre")),
-                   h4("Masculino"),
+                   textOutput("out_text_tmp1"),
+                   h4("Masculino")
             ),
             column(width=6,
                    align="center",
@@ -174,6 +175,7 @@ ui <- fluidPage(
                    height = 100
                    ),
                    h2(textOutput("out_text_mujer")),
+                   textOutput("out_text_tmp2"),
                    h4("Femenino")
             )
           ),
@@ -330,23 +332,384 @@ server <- function(input, output, session) {
                        selected = dataPediatricoChoices$DIAGNOSTICO)
   })
   
+  
+  ######################################################
+  #  provinciales
+  ######################################################
+  output$mymap <- renderLeaflet({
+    
+    map_region_org <-  st_read("data/PROVCenso2010.shp")
+    
+    map_region <- st_transform(map_region_org, crs = "+proj=longlat +datum=WGS84")
+    
+    dataProv <- dataProv %>%
+      filter(TOPONIMIA %in% input$in_map_prov) %>%
+      filter(YEAR %in% input$in_map_year) %>%
+      filter(SEXO %in% input$in_map_sexo) %>%
+      group_by(TOPONIMIA)  %>%
+      summarise(TOTAL_CASOS = sum(CASOS)) %>%
+      mutate(TOPONIMIA = toupper(TOPONIMIA)) %>%
+      select(TOPONIMIA, TOTAL_CASOS)
+    
+    map_region <- map_region %>%
+      left_join(dataProv) %>%
+      mutate(TOTAL_CASOS = ifelse(is.na(TOTAL_CASOS), 0, TOTAL_CASOS))
+    
+    paleta_de_color <- colorNumeric("Blues", NULL, n = nrow(map_region))
+    pal <- colorNumeric(palette="Blues", domain=map_region$TOTAL_CASOS)
+    
+    region_popup <- paste0(
+      "<strong>Provincia: </strong>",
+      map_region$TOPONIMIA,
+      "<br><strong>Casos: </strong>",
+      format(map_region$TOTAL_CASOS, big.mark = ",")
+    )
+    
+    
+    leaflet(data = map_region) %>%
+      addTiles() %>%
+      addPolygons(
+        fillColor = ~paleta_de_color(TOTAL_CASOS),
+        fillOpacity = 0.7,
+        color = "#808080",
+        weight = 1
+        , popup = region_popup
+      ) %>%
+      addLegend(position='topright', pal=pal, values=~TOTAL_CASOS)
+  })
+  
+  output$out_EstadioClinico <- renderPlot({
+    
+    dataEstadioClinicoNew <- dataEstadioClinico %>% 
+      filter(TOPONIMIA %in% input$in_map_prov) %>%
+      filter(YEAR %in% input$in_map_year) %>%
+      mutate(TIPO = ifelse(TIPO == "9", "Desc.", TIPO))
+    
+    prov <- dataEstadioClinicoNew$TOPONIMIA
+    tipo <- dataEstadioClinicoNew$TIPO
+    val <- dataEstadioClinicoNew$VAL
+    df <- data.frame(x = prov, y = val, EstadioClinico = tipo)
+    
+    ggplot(df, aes(x = x, y = y, fill = EstadioClinico)) +
+      geom_bar(position = "stack", stat = "identity") + 
+      xlab("Toponimia") +
+      ylab("Casos") +
+      scale_fill_grey()+ 
+      theme_bw(base_size = 13) +
+      theme(axis.text.x=element_text(angle = -45, hjust = 0))
+  })
+  
+  dataProvinciaTable <- reactive({
+    
+    dataProvinciaTable <- dataProv %>%
+      filter(TOPONIMIA %in% input$in_map_prov) %>%
+      filter(YEAR %in% input$in_map_year) %>%
+      filter(SEXO %in% input$in_map_sexo)
+
+    dataProvinciaSexo <- dataProvinciaTable %>%
+      distinct(SEXO)
+    
+    flgMasculino <- "masculino" %in% dataProvinciaSexo$SEXO
+    flgFemenino <- "femenino" %in% dataProvinciaSexo$SEXO
+    
+    dataProvinciaWider <- dataProvinciaTable %>%
+      add_column(flgMas = ifelse(flgMasculino, "TRUE", "FALSE")) %>%
+      add_column(flgFem = ifelse(flgFemenino, "TRUE", "FALSE")) %>%
+      pivot_wider(names_from = "SEXO",
+                  values_from = "CASOS")
+    
+    dataProvinciaWider <- dataProvinciaWider %>%
+      add_column(MASCULINO = as.numeric(ifelse(dataProvinciaWider$flgMas, dataProvinciaWider$masculino, 0))) %>%
+      add_column(FEMENINO = as.numeric(ifelse(dataProvinciaWider$flgFem, dataProvinciaWider$femenino, 0)))
+    
+    dataProvinciaWider <- dataProvinciaWider %>%
+      mutate(TOTAL_CASOS = MASCULINO + FEMENINO) %>%
+      mutate(MASCULINO = format(MASCULINO, nsmall = 0)) %>%
+      mutate(FEMENINO = format(FEMENINO, nsmall = 0)) %>%
+      mutate(TOTAL_CASOS = format(TOTAL_CASOS, nsmall = 0)) %>%
+      rename("TOTAL CASOS" = TOTAL_CASOS) %>%
+      select(YEAR, TOPONIMIA, MASCULINO, FEMENINO, "TOTAL CASOS")
+    
+    dataProvinciaWider <- with(dataProvinciaWider, dataProvinciaWider[order(YEAR,TOPONIMIA),])
+  })
+  
+  output$out_table_Provincia <- renderTable({
+    
+    dataProvinciaTable()
+    
+  })
+  
+  output$downloadDataProvincia <- downloadHandler(
+    filename = function() {
+      "Cuadro1.csv"
+    },
+    content = function(file) {
+      write.csv(dataProvinciaTable(), file, row.names = FALSE)
+    }
+  )
+  
+  dataEstadioClinicoTable <- reactive({
+    
+    dataEstadioClinicoTable <- dataEstadioClinico %>%
+      filter(TOPONIMIA %in% input$in_map_prov) %>%
+      filter(YEAR %in% input$in_map_year) %>%
+      rename(CASOS = VAL) %>%
+      arrange(YEAR, TOPONIMIA, TIPO) %>%
+      rename("ESTADIO CLINICO" = TIPO)
+    
+    dataEstadioClinicoWider <- dataEstadioClinicoTable %>%
+      pivot_wider(names_from = "ESTADIO CLINICO",
+                  values_from = "CASOS") %>%
+      rename("DESCONOSIDO" = "9") %>%
+      mutate("TOTAL CASOS" = DESCONOSIDO + I + II + III + IV) %>%
+      select(YEAR, TOPONIMIA, I, II, III, IV, DESCONOSIDO, "TOTAL CASOS")
+    
+    dataEstadioClinicoWider <- with(dataEstadioClinicoWider, dataEstadioClinicoWider[order(YEAR,TOPONIMIA),])
+  })
+  
+  output$out_table_Estadio <- renderTable({
+    dataEstadioClinicoTable()
+  })
+  
+  output$downloadDataEstadio <- downloadHandler(
+    filename = function() {
+      "Cuadro2.csv"
+    },
+    content = function(file) {
+      write.csv(dataEstadioClinicoTable(), file, row.names = FALSE)
+    }
+  )
+  
+  ######################################################
+  #  Sexo y Grupo Etario
+  ######################################################
+  #dataHombreMujerNew <- reactive({
+  #  dataHombreMujerNew <- dataHombreMujer %>% 
+  #    filter(YEAR %in% input$in_hm_year) %>%
+  #    filter(SEXO %in% input$in_hm_sexo) %>%
+  #    filter(ETARIO %in% input$in_hm_etario)
+  #  
+  #  #dataHombreMujerNew <- with(dataHombreMujerNew, dataHombreMujerNew[order(YEAR,SEXO,ETARIO),])
+  #})
+  
+  dataHombreMujerTable <- reactive({
+    
+    dataHombreMujerTable <- dataHombreMujer %>% 
+      filter(YEAR %in% input$in_hm_year) %>%
+      filter(SEXO %in% input$in_hm_sexo) %>%
+      filter(ETARIO %in% input$in_hm_etario)
+    
+    dataHombreMujerNewSexo <- dataHombreMujerTable %>%
+      distinct(SEXO)
+    
+    flgMasculino <- "masculino" %in% dataHombreMujerNewSexo$SEXO
+    flgFemenino <- "femenino" %in% dataHombreMujerNewSexo$SEXO
+    
+    dataHombreMujerWider <- dataHombreMujerTable %>%
+      add_column(flgMas = ifelse(flgMasculino, "TRUE", "FALSE")) %>%
+      add_column(flgFem = ifelse(flgFemenino, "TRUE", "FALSE")) %>%
+      pivot_wider(names_from = "SEXO",
+                  values_from = "CASOS")
+    
+    dataHombreMujerWider <- dataHombreMujerWider %>%
+      add_column(MASCULINO = as.numeric(ifelse(dataHombreMujerWider$flgMas, dataHombreMujerWider$masculino, 0))) %>%
+      add_column(FEMENINO = as.numeric(ifelse(dataHombreMujerWider$flgFem, dataHombreMujerWider$femenino, 0)))
+    
+    dataHombreMujerWider <- dataHombreMujerWider %>%
+      mutate(TOTAL_CASOS = MASCULINO + FEMENINO) %>%
+      mutate(MASCULINO = format(MASCULINO, nsmall = 0)) %>%
+      mutate(FEMENINO = format(FEMENINO, nsmall = 0)) %>%
+      mutate(TOTAL_CASOS = format(TOTAL_CASOS, nsmall = 0)) %>%
+      rename("TOTAL CASOS" = TOTAL_CASOS) %>%
+      rename(GRUPO_ETARIO = ETARIO) %>%
+      select(YEAR, GRUPO_ETARIO, MASCULINO, FEMENINO, "TOTAL CASOS")
+    
+    dataHombreMujerWider <- with(dataHombreMujerWider, dataHombreMujerWider[order(YEAR,GRUPO_ETARIO),])
+  })
+  
+  output$disttable <- renderTable({
+    
+    dataHombreMujerTable()
+    
+  })
+  
+  output$distPlot <- renderPlot({
+    
+    dataHombreMujerTotal <- dataHombreMujer %>% 
+      filter(YEAR %in% input$in_hm_year) %>%
+      filter(SEXO %in% input$in_hm_sexo) %>%
+      filter(ETARIO %in% input$in_hm_etario)
+    
+    #dataHombreMujerTotal  <- dataHombreMujerNew()
+    
+    dataHombreMujerTotal <- dataHombreMujerTotal %>%
+      group_by(SEXO, ETARIO)  %>%
+      summarise(TOTAL_CASOS=sum(CASOS))
+    
+    ## barplots for male populations goes to the left (thus negative sign)
+    dataHombreMujerTotal$TOTAL_CASOS <- ifelse(dataHombreMujerTotal$SEXO == "masculino", -1*dataHombreMujerTotal$TOTAL_CASOS, dataHombreMujerTotal$TOTAL_CASOS)
+    
+    ## pyramid charts are two barcharts with axes flipped
+    pyramidGH2 <- ggplot(dataHombreMujerTotal, aes(x = ETARIO, y = TOTAL_CASOS, fill = SEXO)) + 
+      geom_bar(data = subset(dataHombreMujerTotal, SEXO == "femenino"), stat = "identity") +
+      geom_bar(data = subset(dataHombreMujerTotal, SEXO == "masculino"), stat = "identity") + 
+      scale_fill_manual("", values = c("masculino" = "#5B9BD5", "femenino" = "#ED7D31")) + 
+      scale_y_continuous(limits = c(-1000, 1000),
+                         breaks = seq(-1000, 1000, 100),
+                         labels = as.character(c(seq(1000, 0, -100), seq(100, 1000, 100)))) +
+      xlab("Grupo Etario") +
+      ylab("Casos") +
+      theme_bw(base_size = 13) +
+      coord_flip()
+    pyramidGH2
+    
+  })
+  
+  output$downloadDataHombreMujer <- downloadHandler(
+    filename = function() {
+      "Cuadro.csv"
+    },
+    content = function(file) {
+      write.csv(dataHombreMujerTable(), file, row.names = FALSE)
+    }
+  )
+  
+  ######################################################
+  #  Topográficas
+  ######################################################
+  dataLocalizacionTable <- reactive({
+    
+    dataLocalizacionTable <- dataLocalizacion %>%
+      filter(LOCALIZACION %in% input$in_local_localizacion) %>%
+      filter(YEAR %in% input$in_local_year) %>%
+      filter(SEXO %in% input$in_local_sexo) %>%
+      arrange(YEAR, SEXO, LOCALIZACION)
+    
+    dataLocalizacionSexo <- dataLocalizacionTable %>%
+      distinct(SEXO)
+    
+    flgMasculino <- "masculino" %in% dataLocalizacionSexo$SEXO
+    flgFemenino <- "femenino" %in% dataLocalizacionSexo$SEXO
+    
+    dataLocalizacionWider <- dataLocalizacionTable %>%
+      add_column(flgMas = ifelse(flgMasculino, "TRUE", "FALSE")) %>%
+      add_column(flgFem = ifelse(flgFemenino, "TRUE", "FALSE")) %>%
+      pivot_wider(names_from = "SEXO",
+                  values_from = "CASOS")
+    
+    dataLocalizacionWider <- dataLocalizacionWider %>%
+      add_column(MASCULINO = as.numeric(ifelse(dataLocalizacionWider$flgMas, ifelse(is.na(dataLocalizacionWider$masculino), 0, dataLocalizacionWider$masculino), 0))) %>%
+      add_column(FEMENINO = as.numeric(ifelse(dataLocalizacionWider$flgFem, ifelse(is.na(dataLocalizacionWider$femenino), 0, dataLocalizacionWider$femenino), 0)))
+    
+    
+    dataLocalizacionWider <- dataLocalizacionWider %>%
+      mutate(TOTAL_CASOS = MASCULINO + FEMENINO) %>%
+      mutate(MASCULINO = format(MASCULINO, nsmall = 0)) %>%
+      mutate(FEMENINO = format(FEMENINO, nsmall = 0)) %>%
+      mutate(TOTAL_CASOS = format(TOTAL_CASOS, nsmall = 0)) %>%
+      rename("TOTAL CASOS" = TOTAL_CASOS) %>%
+      select(YEAR, LOCALIZACION, MASCULINO, FEMENINO, "TOTAL CASOS")
+    
+    dataLocalizacionWider <- with(dataLocalizacionWider, dataLocalizacionWider[order(YEAR,LOCALIZACION),])
+  })
+  
+  output$out_table_localizacion <- renderTable({
+    
+    dataLocalizacionTable()
+    
+  })
+  
+  output$downloadDataLocalizacion <- downloadHandler(
+    filename = function() {
+      "Cuadro.csv"
+    },
+    content = function(file) {
+      write.csv(dataLocalizacionTable(), file, row.names = FALSE)
+    }
+  )
+  
+  output$out_plot_localizacion <- renderPlot({
+    
+    dataLocalizacionNew <- dataLocalizacion %>%
+      filter(LOCALIZACION %in% input$in_local_localizacion) %>%
+      filter(YEAR %in% input$in_local_year) %>%
+      filter(SEXO %in% input$in_local_sexo) %>%
+      arrange(YEAR, SEXO, LOCALIZACION)
+    
+    dataLocalizacionTotal <- dataLocalizacionNew %>%
+      group_by(SEXO) %>%
+      summarise(total_val = sum(CASOS)) %>%
+      mutate(total_val = ifelse(is.na(total_val), 0, total_val))
+    
+    totalHombre <- dataLocalizacionTotal %>%
+      filter(SEXO == "masculino")
+    
+    totalMujer <- dataLocalizacionTotal %>%
+      filter(SEXO == "femenino")
+    
+    output$out_text_hombre <- renderText(ifelse(is.null(totalHombre$total_val), 0, format(totalHombre$total_val, big.mark = ",")))
+    output$out_text_mujer <- renderText(ifelse(is.null(totalMujer$total_val), 0, format(totalMujer$total_val, big.mark = ",")))
+    
+    
+    dataLocalizacionTop10 <- dataLocalizacionNew %>%
+      group_by(LOCALIZACION)  %>%
+      summarise(total_val = sum(CASOS)) %>%
+      top_n(10, total_val) %>%
+      arrange(desc(total_val))
+    
+    dataLocalizacionNew <- dataLocalizacionNew %>%
+      group_by(LOCALIZACION, SEXO)  %>%
+      summarise(total_val = sum(CASOS)) %>%
+      filter(LOCALIZACION %in% dataLocalizacionTop10$LOCALIZACION)
+    #arrange(total_val)
+    
+    
+    localizacion <- dataLocalizacionNew$LOCALIZACION
+    localizacion <- factor(localizacion, levels = dataLocalizacionTop10$LOCALIZACION)
+    tipo <- dataLocalizacionNew$SEXO
+    val <- dataLocalizacionNew$total_val
+    df <- data.frame(x = localizacion, y = val, sexo = tipo)
+    
+    
+    ggplot(df, aes(x = x, y = y, fill = sexo)) +
+      geom_bar(position = "stack", stat = "identity") + 
+      xlab("Localización") +
+      ylab("Casos") +
+      theme_bw(base_size = 13) +
+      scale_fill_manual("", values = c("masculino" = "#5B9BD5", "femenino" = "#ED7D31")) + 
+      theme(axis.text.x=element_text(angle = -45, hjust = 0)) +
+      theme(legend.position = "none")
+  })
+  
+  
   ######################################################
   #  Pediatricos
   ######################################################
-  output$out_plot_pediatrico_solido <- renderPlot({
+
+  output$out_table_pediatrico_solido <- renderTable({
     
     dataPediatrico <- dataPediatrico %>%
       filter(YEAR %in% input$in_pediatrico_year) %>%
       filter(SEXO %in% input$in_pediatrico_sexo) %>%
       filter(DIAGNOSTICO %in% input$in_pediatrico_diagnostico_solido)
     
+    dataPediatricoSexo <- dataPediatrico %>%
+      distinct(SEXO)
+    
+    flgMasculino <- "masculino" %in% dataPediatricoSexo$SEXO
+    flgFemenino <- "femenino" %in% dataPediatricoSexo$SEXO
+    
     dataPediatricoWider <- dataPediatrico %>%
+      add_column(flgMas = ifelse(flgMasculino, "TRUE", "FALSE")) %>%
+      add_column(flgFem = ifelse(flgFemenino, "TRUE", "FALSE")) %>%
       pivot_wider(names_from = "SEXO",
-                  values_from = "CASOS") %>%
-      rename("MASCULINO" = masculino) %>%
-      rename("FEMENINO" = femenino) %>%
-      mutate(MASCULINO = as.numeric(ifelse(is.na(MASCULINO), 0, MASCULINO))) %>%
-      mutate(FEMENINO = as.numeric(ifelse(is.na(FEMENINO), 0, FEMENINO))) %>%
+                  values_from = "CASOS")
+    
+    dataPediatricoWider <- dataPediatricoWider %>%
+      add_column(MASCULINO = as.numeric(ifelse(dataPediatricoWider$flgMas, dataPediatricoWider$masculino, 0))) %>%
+      add_column(FEMENINO = as.numeric(ifelse(dataPediatricoWider$flgFem, dataPediatricoWider$femenino, 0)))
+    
+    dataPediatricoWider <- dataPediatricoWider %>%
       mutate(TOTAL_CASOS = MASCULINO + FEMENINO) %>%
       mutate(MASCULINO = format(MASCULINO, nsmall = 0)) %>%
       mutate(FEMENINO = format(FEMENINO, nsmall = 0)) %>%
@@ -354,7 +717,15 @@ server <- function(input, output, session) {
       rename("TOTAL CASOS" = TOTAL_CASOS) %>%
       select(YEAR, DIAGNOSTICO, MASCULINO, FEMENINO, "TOTAL CASOS")
     
-    output$out_table_pediatrico_solido <- renderTable(dataPediatricoWider)
+    dataPediatricoWider <- with(dataPediatricoWider, dataPediatricoWider[order(YEAR,DIAGNOSTICO),])
+  })
+  
+  output$out_plot_pediatrico_solido <- renderPlot({
+    
+    dataPediatrico <- dataPediatrico %>%
+      filter(YEAR %in% input$in_pediatrico_year) %>%
+      filter(SEXO %in% input$in_pediatrico_sexo) %>%
+      filter(DIAGNOSTICO %in% input$in_pediatrico_diagnostico_solido)
     
     diagnostico <- dataPediatrico$DIAGNOSTICO
     tipo <- dataPediatrico$SEXO
@@ -371,34 +742,30 @@ server <- function(input, output, session) {
       theme(legend.position = "none")
   })
   
-  output$out_plot_pediatrico_liquido <- renderPlot({
+  output$out_table_pediatrico_liquido <- renderTable({
     
     dataPediatrico <- dataPediatrico %>%
       filter(YEAR %in% input$in_pediatrico_year) %>%
       filter(SEXO %in% input$in_pediatrico_sexo) %>%
       filter(DIAGNOSTICO %in% input$in_pediatrico_diagnostico_liquido)
     
+    dataPediatricoSexo <- dataPediatrico %>%
+      distinct(SEXO)
+    
+    flgMasculino <- "masculino" %in% dataPediatricoSexo$SEXO
+    flgFemenino <- "femenino" %in% dataPediatricoSexo$SEXO
+    
     dataPediatricoWider <- dataPediatrico %>%
+      add_column(flgMas = ifelse(flgMasculino, "TRUE", "FALSE")) %>%
+      add_column(flgFem = ifelse(flgFemenino, "TRUE", "FALSE")) %>%
       pivot_wider(names_from = "SEXO",
                   values_from = "CASOS")
     
-    flgFemenino <- "femenino" %in% names(dataPediatricoWider)
-    
-    
-    femenino2 <- vector()
-    dataPediatricoWider <- tibble(dataPediatricoWider, ifelse(flgFemenino, femenino2, NULL))
-      #add_column(ifelse(flgFemenino, "femenino2", "femenino"))
-      #ifelse(flgFemenino, add_column(add_column("femenino2"), add_column(add_column("femenino"))))
-    
-    output$out_text_donut <- renderText(flgFemenino)
-    output$out_table_donut <- renderTable(dataPediatricoWider)
+    dataPediatricoWider <- dataPediatricoWider %>%
+      add_column(MASCULINO = as.numeric(ifelse(dataPediatricoWider$flgMas, dataPediatricoWider$masculino, 0))) %>%
+      add_column(FEMENINO = as.numeric(ifelse(dataPediatricoWider$flgFem, dataPediatricoWider$femenino, 0)))
     
     dataPediatricoWider <- dataPediatricoWider %>%
-      rename("MASCULINO" = masculino) %>%
-      rename("FEMENINO" = femenino) %>%
-      #rename("FEMENINO" = ifelse(flgFemenino == TRUE, dataPediatricoWider$femenino, NULL)) %>%
-      mutate(MASCULINO = as.numeric(ifelse(is.na(MASCULINO), 0, MASCULINO))) %>%
-      mutate(FEMENINO = as.numeric(ifelse(is.na(FEMENINO), 0, FEMENINO))) %>%
       mutate(TOTAL_CASOS = MASCULINO + FEMENINO) %>%
       mutate(MASCULINO = format(MASCULINO, nsmall = 0)) %>%
       mutate(FEMENINO = format(FEMENINO, nsmall = 0)) %>%
@@ -406,7 +773,15 @@ server <- function(input, output, session) {
       rename("TOTAL CASOS" = TOTAL_CASOS) %>%
       select(YEAR, DIAGNOSTICO, MASCULINO, FEMENINO, "TOTAL CASOS")
     
-    output$out_table_pediatrico_liquido <- renderTable(dataPediatricoWider)
+    dataPediatricoWider <- with(dataPediatricoWider, dataPediatricoWider[order(YEAR,DIAGNOSTICO),])
+  })
+  
+  output$out_plot_pediatrico_liquido <- renderPlot({
+    
+    dataPediatrico <- dataPediatrico %>%
+      filter(YEAR %in% input$in_pediatrico_year) %>%
+      filter(SEXO %in% input$in_pediatrico_sexo) %>%
+      filter(DIAGNOSTICO %in% input$in_pediatrico_diagnostico_liquido)
     
     diagnostico <- dataPediatrico$DIAGNOSTICO
     tipo <- dataPediatrico$SEXO
@@ -517,275 +892,6 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       write.csv(dataPediatricoLiquido(), file, row.names = FALSE)
-    }
-  )
-  
-  ######################################################
-  #  Topográficas
-  ######################################################
-  dataLocalizacionNew <- reactive({
-    dataLocalizacionNew <- dataLocalizacion %>%
-      filter(LOCALIZACION %in% input$in_local_localizacion) %>%
-      filter(YEAR %in% input$in_local_year) %>%
-      filter(SEXO %in% input$in_local_sexo) %>%
-      arrange(YEAR, SEXO, LOCALIZACION)
-  })
-  
-  output$out_table_localizacion <- renderTable({
-    dataLocalizacionWider <- dataLocalizacionNew() %>%
-      pivot_wider(names_from = "SEXO",
-                  values_from = "CASOS") %>%
-      rename("MASCULINO" = masculino) %>%
-      rename("FEMENINO" = femenino) %>%
-      mutate(MASCULINO = as.numeric(ifelse(is.na(MASCULINO), 0, MASCULINO))) %>%
-      mutate(FEMENINO = as.numeric(ifelse(is.na(FEMENINO), 0, FEMENINO))) %>%
-      mutate(TOTAL_CASOS = MASCULINO + FEMENINO) %>%
-      mutate(MASCULINO = format(MASCULINO, nsmall = 0)) %>%
-      mutate(FEMENINO = format(FEMENINO, nsmall = 0)) %>%
-      mutate(TOTAL_CASOS = format(TOTAL_CASOS, nsmall = 0)) %>%
-      rename("TOTAL CASOS" = TOTAL_CASOS) %>%
-      select(YEAR, LOCALIZACION, MASCULINO, FEMENINO, "TOTAL CASOS")
-  })
-  
-  output$downloadDataLocalizacion <- downloadHandler(
-    filename = function() {
-      "Cuadro.csv"
-    },
-    content = function(file) {
-      write.csv(dataLocalizacionNew(), file, row.names = FALSE)
-    }
-  )
-  
-  output$out_plot_localizacion <- renderPlot({
-    
-    dataLocalizacionNew <- dataLocalizacionNew()
-
-    dataLocalizacionTotal <- dataLocalizacionNew %>%
-      group_by(SEXO) %>%
-      summarise(total_val = sum(CASOS)) %>%
-      mutate(total_val = ifelse(is.na(total_val), 0, total_val))
-    
-    totalHombre <- dataLocalizacionTotal %>%
-      filter(SEXO == "masculino")
-    
-    totalMujer <- dataLocalizacionTotal %>%
-      filter(SEXO == "femenino")
-    
-    output$out_text_hombre <- renderText(ifelse(is.null(totalHombre$total_val), 0, format(totalHombre$total_val, big.mark = ",")))
-    output$out_text_mujer <- renderText(ifelse(is.null(totalMujer$total_val), 0, format(totalMujer$total_val, big.mark = ",")))
-
-    
-    dataLocalizacionTop10 <- dataLocalizacionNew %>%
-      group_by(LOCALIZACION)  %>%
-      summarise(total_val = sum(CASOS)) %>%
-      top_n(10, total_val) %>%
-      arrange(desc(total_val))
-    
-    dataLocalizacionNew <- dataLocalizacionNew %>%
-      group_by(LOCALIZACION, SEXO)  %>%
-      summarise(total_val = sum(CASOS)) %>%
-      filter(LOCALIZACION %in% dataLocalizacionTop10$LOCALIZACION)
-      #arrange(total_val)
-    
-
-    localizacion <- dataLocalizacionNew$LOCALIZACION
-    localizacion <- factor(localizacion, levels = dataLocalizacionTop10$LOCALIZACION)
-    tipo <- dataLocalizacionNew$SEXO
-    val <- dataLocalizacionNew$total_val
-    df <- data.frame(x = localizacion, y = val, sexo = tipo)
-    
-    
-    ggplot(df, aes(x = x, y = y, fill = sexo)) +
-      geom_bar(position = "stack", stat = "identity") + 
-      xlab("Localización") +
-      ylab("Casos") +
-      theme_bw(base_size = 13) +
-      scale_fill_manual("", values = c("masculino" = "#5B9BD5", "femenino" = "#ED7D31")) + 
-      theme(axis.text.x=element_text(angle = -45, hjust = 0)) +
-      theme(legend.position = "none")
-  })
-  
-  ######################################################
-  #  provinciales
-  ######################################################
-  output$mymap <- renderLeaflet({
-    
-    map_region_org <-  st_read("data/PROVCenso2010.shp")
-    
-    map_region <- st_transform(map_region_org, crs = "+proj=longlat +datum=WGS84")
-
-    dataProv <- dataProv %>%
-      filter(TOPONIMIA %in% input$in_map_prov) %>%
-      filter(YEAR %in% input$in_map_year) %>%
-      filter(SEXO %in% input$in_map_sexo) %>%
-      group_by(TOPONIMIA)  %>%
-      summarise(TOTAL_CASOS = sum(CASOS)) %>%
-      mutate(TOPONIMIA = toupper(TOPONIMIA)) %>%
-      select(TOPONIMIA, TOTAL_CASOS)
-    
-    map_region <- map_region %>%
-      left_join(dataProv) %>%
-      mutate(TOTAL_CASOS = ifelse(is.na(TOTAL_CASOS), 0, TOTAL_CASOS))
-    
-    paleta_de_color <- colorNumeric("Blues", NULL, n = nrow(map_region))
-    pal <- colorNumeric(palette="Blues", domain=map_region$TOTAL_CASOS)
-    
-    region_popup <- paste0(
-      "<strong>Provincia: </strong>",
-      map_region$TOPONIMIA,
-      "<br><strong>Casos: </strong>",
-      format(map_region$TOTAL_CASOS, big.mark = ",")
-    )
-    
-    
-    leaflet(data = map_region) %>%
-      addTiles() %>%
-      addPolygons(
-        fillColor = ~paleta_de_color(TOTAL_CASOS),
-        fillOpacity = 0.7,
-        color = "#808080",
-        weight = 1
-        , popup = region_popup
-      ) %>%
-      addLegend(position='topright', pal=pal, values=~TOTAL_CASOS)
-  })
-  
-  output$out_EstadioClinico <- renderPlot({
-    
-    dataEstadioClinicoNew <- dataEstadioClinico %>% 
-      filter(TOPONIMIA %in% input$in_map_prov) %>%
-      filter(YEAR %in% input$in_map_year) %>%
-      mutate(TIPO = ifelse(TIPO == "9", "Desc.", TIPO))
-
-    prov <- dataEstadioClinicoNew$TOPONIMIA
-    tipo <- dataEstadioClinicoNew$TIPO
-    val <- dataEstadioClinicoNew$VAL
-    df <- data.frame(x = prov, y = val, EstadioClinico = tipo)
-      
-    ggplot(df, aes(x = x, y = y, fill = EstadioClinico)) +
-      geom_bar(position = "stack", stat = "identity") + 
-      xlab("Toponimia") +
-      ylab("Casos") +
-      scale_fill_grey()+ 
-      theme_bw(base_size = 13) +
-      theme(axis.text.x=element_text(angle = -45, hjust = 0))
-  })
-    
-  dataProvincia <- reactive({
-    dataProvincia <- dataProv %>%
-      filter(TOPONIMIA %in% input$in_map_prov) %>%
-      filter(YEAR %in% input$in_map_year) %>%
-      filter(SEXO %in% input$in_map_sexo)
-      #group_by(TOPONIMIA)  %>%
-      #summarise(TOTAL_CASOS=sum(Val)) %>%
-      #select(TOPONIMIA, TOTAL_CASOS)
-    
-    dataProvincia <- with(dataProvincia, dataProvincia[order(YEAR,TOPONIMIA,SEXO),])
-  })
-  
-  
-  output$out_table_Provincia <- renderTable({
-    dataProvinciaWider <- dataProvincia() %>%
-      pivot_wider(names_from = "SEXO",
-                  values_from = "CASOS") %>%
-      rename("MASCLINO" = masculino) %>%
-      rename("FEMENINO" = femenino) %>%
-      mutate("TOTAL CASOS" = MASCLINO + FEMENINO) %>%
-      select(YEAR, TOPONIMIA, MASCLINO, FEMENINO, "TOTAL CASOS")
-  })
-  
-  output$downloadDataProvincia <- downloadHandler(
-    filename = function() {
-      "Cuadro1.csv"
-    },
-    content = function(file) {
-      write.csv(dataProvincia(), file, row.names = FALSE)
-    }
-  )
-  
-  dataEstadioClinicoNew <- reactive({
-    dataEstadioClinicoNew <- dataEstadioClinico %>%
-      filter(TOPONIMIA %in% input$in_map_prov) %>%
-      filter(YEAR %in% input$in_map_year) %>%
-      rename(CASOS = VAL) %>%
-      arrange(YEAR, TOPONIMIA, TIPO) %>%
-      rename("ESTADIO CLINICO" = TIPO)
-  })
-  
-  output$out_table_Estadio <- renderTable({
-    dataEstadioClinicoWider <- dataEstadioClinicoNew() %>%
-      pivot_wider(names_from = "ESTADIO CLINICO",
-                  values_from = "CASOS") %>%
-      rename("DESCONOSIDO" = "9") %>%
-      mutate("TOTAL CASOS" = DESCONOSIDO + I + II + III + IV) %>%
-      select(YEAR, TOPONIMIA, I, II, III, IV, DESCONOSIDO, "TOTAL CASOS")
-  })
-  
-  output$downloadDataEstadio <- downloadHandler(
-    filename = function() {
-      "Cuadro2.csv"
-    },
-    content = function(file) {
-      write.csv(dataEstadioClinicoNew(), file, row.names = FALSE)
-    }
-  )
-  
-  ######################################################
-  #  Sexo y Grupo Etario
-  ######################################################
-  dataHombreMujerNew <- reactive({
-    dataHombreMujerNew <- dataHombreMujer %>% 
-      filter(YEAR %in% input$in_hm_year) %>%
-      filter(SEXO %in% input$in_hm_sexo) %>%
-      filter(ETARIO %in% input$in_hm_etario)
-    
-    dataHombreMujerNew <- with(dataHombreMujerNew, dataHombreMujerNew[order(YEAR,SEXO,ETARIO),])
-  })
-  
-  output$disttable <- renderTable({
-    dataHombreMujerWider <- dataHombreMujerNew() %>%
-      pivot_wider(names_from = "SEXO",
-                  values_from = "CASOS") %>%
-      rename("MASCLINO" = masculino) %>%
-      rename("FEMENINO" = femenino) %>%
-      rename("GRUPO ETARIO" = ETARIO) %>%
-      mutate("TOTAL CASOS" = MASCLINO + FEMENINO) %>%
-      select(YEAR, "GRUPO ETARIO", MASCLINO, FEMENINO, "TOTAL CASOS")
-  })
-  
-  output$distPlot <- renderPlot({
-
-    dataHombreMujerTotal  <- dataHombreMujerNew()
-    
-    dataHombreMujerTotal <- dataHombreMujerTotal %>%
-      group_by(SEXO, ETARIO)  %>%
-      summarise(TOTAL_CASOS=sum(CASOS))
-
-    ## barplots for male populations goes to the left (thus negative sign)
-    dataHombreMujerTotal$TOTAL_CASOS <- ifelse(dataHombreMujerTotal$SEXO == "masculino", -1*dataHombreMujerTotal$TOTAL_CASOS, dataHombreMujerTotal$TOTAL_CASOS)
-    
-    ## pyramid charts are two barcharts with axes flipped
-    pyramidGH2 <- ggplot(dataHombreMujerTotal, aes(x = ETARIO, y = TOTAL_CASOS, fill = SEXO)) + 
-      geom_bar(data = subset(dataHombreMujerTotal, SEXO == "femenino"), stat = "identity") +
-      geom_bar(data = subset(dataHombreMujerTotal, SEXO == "masculino"), stat = "identity") + 
-      scale_fill_manual("", values = c("masculino" = "#5B9BD5", "femenino" = "#ED7D31")) + 
-      scale_y_continuous(limits = c(-1000, 1000),
-                         breaks = seq(-1000, 1000, 100),
-                         labels = as.character(c(seq(1000, 0, -100), seq(100, 1000, 100)))) +
-      xlab("Grupo Etario") +
-      ylab("Casos") +
-      theme_bw(base_size = 13) +
-      coord_flip()
-    pyramidGH2
-    
-  })
-  
-  output$downloadDataHombreMujer <- downloadHandler(
-    filename = function() {
-      "Cuadro.csv"
-    },
-    content = function(file) {
-      write.csv(dataHombreMujerNew(), file, row.names = FALSE)
     }
   )
 }
