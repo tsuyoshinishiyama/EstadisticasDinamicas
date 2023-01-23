@@ -143,10 +143,6 @@ ui <- fluidPage(
                       list("masculino", "femenino")
           ),
           uiOutput("ui_localizacion"),
-          #checkboxGroupInput("in_local_localizacion", "Localización:", inline = TRUE,
-          #                   choices = unique(dataLocalizacion$LOCALIZACION),
-          #                   selected = unique(dataLocalizacion$LOCALIZACION)
-          #),
           downloadButton("downloadDataLocalizacion", "Download:Cuadro")
         ),
         mainPanel(
@@ -164,7 +160,6 @@ ui <- fluidPage(
                    height = 100
                    ),
                    h2(textOutput("out_text_hombre")),
-                   textOutput("out_text_tmp1"),
                    h4("Masculino")
             ),
             column(width=6,
@@ -175,7 +170,6 @@ ui <- fluidPage(
                    height = 100
                    ),
                    h2(textOutput("out_text_mujer")),
-                   textOutput("out_text_tmp2"),
                    h4("Femenino")
             )
           ),
@@ -213,14 +207,6 @@ ui <- fluidPage(
           ),
           uiOutput("ui_pediatrico_diagnostico_solido"),
           uiOutput("ui_pediatrico_diagnostico_liquido"),
-          #selectInput("in_pediatrico_diagnostico_solido", "Diagnósticos tumores sólidos:", multiple = TRUE,
-          #            choices = unique(filter(dataPediatrico, TIPO == "solido") %>% select(DIAGNOSTICO)),
-          #            selected = unique(dataPediatrico$DIAGNOSTICO)
-          #),
-          #selectInput("in_pediatrico_diagnostico_liquido", "Diagnósticos tumores líquidos:", multiple = TRUE,
-          #            choices = unique(filter(dataPediatrico, TIPO == "liquido") %>% select(DIAGNOSTICO)),
-          #            selected = unique(dataPediatrico$DIAGNOSTICO)
-          #),
           downloadButton("downloadDataPediatricoSolido", "Download:Cuadro1"),
           downloadButton("downloadDataPediatricoLiquido", "Download:Cuadro2")
         ),
@@ -483,15 +469,7 @@ server <- function(input, output, session) {
   ######################################################
   #  Sexo y Grupo Etario
   ######################################################
-  #dataHombreMujerNew <- reactive({
-  #  dataHombreMujerNew <- dataHombreMujer %>% 
-  #    filter(YEAR %in% input$in_hm_year) %>%
-  #    filter(SEXO %in% input$in_hm_sexo) %>%
-  #    filter(ETARIO %in% input$in_hm_etario)
-  #  
-  #  #dataHombreMujerNew <- with(dataHombreMujerNew, dataHombreMujerNew[order(YEAR,SEXO,ETARIO),])
-  #})
-  
+
   dataHombreMujerTable <- reactive({
     
     dataHombreMujerTable <- dataHombreMujer %>% 
@@ -539,8 +517,6 @@ server <- function(input, output, session) {
       filter(YEAR %in% input$in_hm_year) %>%
       filter(SEXO %in% input$in_hm_sexo) %>%
       filter(ETARIO %in% input$in_hm_etario)
-    
-    #dataHombreMujerTotal  <- dataHombreMujerNew()
     
     dataHombreMujerTotal <- dataHombreMujerTotal %>%
       group_by(SEXO, ETARIO)  %>%
@@ -661,9 +637,7 @@ server <- function(input, output, session) {
       group_by(LOCALIZACION, SEXO)  %>%
       summarise(total_val = sum(CASOS)) %>%
       filter(LOCALIZACION %in% dataLocalizacionTop10$LOCALIZACION)
-    #arrange(total_val)
-    
-    
+
     localizacion <- dataLocalizacionNew$LOCALIZACION
     localizacion <- factor(localizacion, levels = dataLocalizacionTop10$LOCALIZACION)
     tipo <- dataLocalizacionNew$SEXO
@@ -805,10 +779,8 @@ server <- function(input, output, session) {
       filter(DIAGNOSTICO %in% input$in_pediatrico_diagnostico_solido | DIAGNOSTICO %in% input$in_pediatrico_diagnostico_liquido) %>%
       group_by(SEXO) %>%
       summarise(total_val = sum(CASOS))
-      #mutate(total_val = ifelse(length(total_val) == 0, 0, total_val))
   })
-  
-  
+
   output$out_plot_pediatrico_boygirl <- renderPlot({
     
     dataPediatricoTotalBoy <- dataPediatricoTotal() %>%
