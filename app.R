@@ -380,7 +380,8 @@ server <- function(input, output, session) {
       geom_bar(position = "stack", stat = "identity") + 
       xlab("Toponimia") +
       ylab("Casos") +
-      scale_fill_grey()+ 
+      #scale_fill_grey() + 
+      scale_fill_brewer(palette = "RdYlBu") +
       theme_bw(base_size = 13) +
       theme(axis.text.x=element_text(angle = -45, hjust = 0))
   })
@@ -413,8 +414,10 @@ server <- function(input, output, session) {
       mutate(MASCULINO = ifelse(dataProvinciaWider$flgMas, format(MASCULINO, nsmall = 0), "NA")) %>%
       mutate(FEMENINO = ifelse(dataProvinciaWider$flgFem, format(FEMENINO, nsmall = 0), "NA")) %>%
       mutate(TOTAL_CASOS = format(TOTAL_CASOS, nsmall = 0)) %>%
+      rename("Masc" = MASCULINO) %>%
+      rename("Fem" = FEMENINO) %>%
       rename("TOTAL CASOS" = TOTAL_CASOS) %>%
-      select(YEAR, TOPONIMIA, MASCULINO, FEMENINO, "TOTAL CASOS")
+      select(YEAR, TOPONIMIA, Masc, Fem, "TOTAL CASOS")
     
     dataProvinciaWider <- with(dataProvinciaWider, dataProvinciaWider[order(YEAR,TOPONIMIA),])
   })
@@ -446,9 +449,9 @@ server <- function(input, output, session) {
     dataEstadioClinicoWider <- dataEstadioClinicoTable %>%
       pivot_wider(names_from = "ESTADIO CLINICO",
                   values_from = "CASOS") %>%
-      rename("DESCONOSIDO" = "9") %>%
-      mutate("TOTAL CASOS" = DESCONOSIDO + I + II + III + IV) %>%
-      select(YEAR, TOPONIMIA, I, II, III, IV, DESCONOSIDO, "TOTAL CASOS")
+      rename("DESCONOCIDO" = "9") %>%
+      mutate("TOTAL CASOS" = DESCONOCIDO + I + II + III + IV) %>%
+      select(YEAR, TOPONIMIA, I, II, III, IV, DESCONOCIDO, "TOTAL CASOS")
     
     dataEstadioClinicoWider <- with(dataEstadioClinicoWider, dataEstadioClinicoWider[order(YEAR,TOPONIMIA),])
   })
@@ -529,9 +532,11 @@ server <- function(input, output, session) {
       mutate(MASCULINO = ifelse(dataHombreMujerWider$flgMas, format(MASCULINO, nsmall = 0), "NA")) %>%
       mutate(FEMENINO = ifelse(dataHombreMujerWider$flgFem, format(FEMENINO, nsmall = 0), "NA")) %>%
       mutate(TOTAL_CASOS = format(TOTAL_CASOS, nsmall = 0)) %>%
+      rename("Masc" = MASCULINO) %>%
+      rename("Fem" = FEMENINO) %>%
       rename("TOTAL CASOS" = TOTAL_CASOS) %>%
       rename(GRUPO_ETARIO = ETARIO) %>%
-      select(YEAR, GRUPO_ETARIO, MASCULINO, FEMENINO, "TOTAL CASOS")
+      select(YEAR, GRUPO_ETARIO, Masc, Fem, "TOTAL CASOS")
     
     dataHombreMujerWider <- with(dataHombreMujerWider, dataHombreMujerWider[order(YEAR,GRUPO_ETARIO),])
   })
@@ -637,8 +642,10 @@ server <- function(input, output, session) {
       mutate(MASCULINO = ifelse(dataLocalizacionWider$flgMas, format(MASCULINO, nsmall = 0), "NA")) %>%
       mutate(FEMENINO = ifelse(dataLocalizacionWider$flgFem, format(FEMENINO, nsmall = 0), "NA")) %>%
       mutate(TOTAL_CASOS = format(TOTAL_CASOS, nsmall = 0)) %>%
+      rename("Masc" = MASCULINO) %>%
+      rename("Fem" = FEMENINO) %>%
       rename("TOTAL CASOS" = TOTAL_CASOS) %>%
-      select(YEAR, LOCALIZACION, MASCULINO, FEMENINO, "TOTAL CASOS")
+      select(YEAR, LOCALIZACION, Masc, Fem, "TOTAL CASOS")
     
     dataLocalizacionWider <- with(dataLocalizacionWider, dataLocalizacionWider[order(YEAR,LOCALIZACION),])
   })
@@ -794,8 +801,10 @@ server <- function(input, output, session) {
       mutate(MASCULINO = ifelse(dataPediatricoSolidoWider$flgMas, format(MASCULINO, nsmall = 0), "NA")) %>%
       mutate(FEMENINO = ifelse(dataPediatricoSolidoWider$flgFem, format(FEMENINO, nsmall = 0), "NA")) %>%
       mutate(TOTAL_CASOS = format(TOTAL_CASOS, nsmall = 0)) %>%
+      rename("Masc" = MASCULINO) %>%
+      rename("Fem" = FEMENINO) %>%
       rename("TOTAL CASOS" = TOTAL_CASOS) %>%
-      select(YEAR, DIAGNOSTICO, MASCULINO, FEMENINO, "TOTAL CASOS")
+      select(YEAR, DIAGNOSTICO, Masc, Fem, "TOTAL CASOS")
     
     dataPediatricoSolidoWider <- with(dataPediatricoSolidoWider, dataPediatricoSolidoWider[order(YEAR,DIAGNOSTICO),])
     
@@ -844,8 +853,10 @@ server <- function(input, output, session) {
       mutate(MASCULINO = ifelse(dataPediatricoLiquidoWider$flgMas, format(MASCULINO, nsmall = 0), "NA")) %>%
       mutate(FEMENINO = ifelse(dataPediatricoLiquidoWider$flgFem, format(FEMENINO, nsmall = 0), "NA")) %>%
       mutate(TOTAL_CASOS = format(TOTAL_CASOS, nsmall = 0)) %>%
+      rename("Masc" = MASCULINO) %>%
+      rename("Fem" = FEMENINO) %>%
       rename("TOTAL CASOS" = TOTAL_CASOS) %>%
-      select(YEAR, DIAGNOSTICO, MASCULINO, FEMENINO, "TOTAL CASOS")
+      select(YEAR, DIAGNOSTICO, Masc, Fem, "TOTAL CASOS")
     
     dataPediatricoLiquidoWider <- with(dataPediatricoLiquidoWider, dataPediatricoLiquidoWider[order(YEAR,DIAGNOSTICO),])
   })
