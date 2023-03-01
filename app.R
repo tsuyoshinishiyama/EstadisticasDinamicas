@@ -35,9 +35,13 @@ ui <- fluidPage(
       icon = icon("map-location-dot"),
       sidebarLayout(
         sidebarPanel(
-          selectInput("in_map_year", "Año:", multiple = TRUE,
-                      list("2017", "2018", "2019", "2020", "2021"),
-                      list("2017", "2018", "2019", "2020", "2021")
+          #selectInput("in_map_year", "Año:", multiple = TRUE,
+          #            list("2017", "2018", "2019", "2020", "2021"),
+          #            list("2017", "2018", "2019", "2020", "2021")
+          #),
+          checkboxGroupInput("in_map_year", "Año:", inline = TRUE,
+                             choices = list("2017", "2018", "2019", "2020", "2021"),
+                             selected = list("2017", "2018", "2019", "2020", "2021"),
           ),
           selectInput("in_map_sexo", "Sexo(Aplicar sólo por provincia):", multiple = TRUE,
                       list("masculino", "femenino"),
@@ -63,6 +67,12 @@ ui <- fluidPage(
               )
             ),
             fluidRow(
+              column(12,
+                     h4("Total de casos según provincia y estadio con Desconocido"),
+                     plotOutput("out_EstadioClinico_sum"),
+              )
+            ),
+            fluidRow(
               column(6,
                      h4("Cuadro1:Total de casos por provincia"),
                      tableOutput("out_table_Provincia")
@@ -84,9 +94,13 @@ ui <- fluidPage(
       icon = icon("chart-simple"),
       sidebarLayout(
         sidebarPanel(
-          selectInput("in_hm_year", "Año:", multiple = TRUE,
-                      list("2017", "2018", "2019", "2020", "2021"),
-                      list("2017", "2018", "2019", "2020", "2021")
+          #selectInput("in_hm_year", "Año:", multiple = TRUE,
+          #            list("2017", "2018", "2019", "2020", "2021"),
+          #            list("2017", "2018", "2019", "2020", "2021")
+          #),
+          checkboxGroupInput("in_hm_year", "Año:", inline = TRUE,
+                             choices = list("2017", "2018", "2019", "2020", "2021"),
+                             selected = list("2017", "2018", "2019", "2020", "2021")
           ),
           selectInput("in_hm_sexo", "Sexo:", multiple = TRUE,
                       list("masculino", "femenino"),
@@ -113,6 +127,8 @@ ui <- fluidPage(
           ),
           fluidRow(
             column(width=12,
+                   textOutput("textTmp"),
+                   textOutput("textTmp2"),
                    h4("Total de casos por sexo"),
                    plotOutput("distPlot")
             )
@@ -134,9 +150,13 @@ ui <- fluidPage(
       icon = icon("person"),
       sidebarLayout(
         sidebarPanel(
-          selectInput("in_local_year", "Año:", multiple = TRUE,
-                      list("2019", "2020", "2021"),
-                      list("2019", "2020", "2021")
+          #selectInput("in_local_year", "Año:", multiple = TRUE,
+          #            list("2019", "2020", "2021"),
+          #            list("2019", "2020", "2021")
+          #),
+          checkboxGroupInput("in_local_year", "Año:", inline = TRUE,
+                             choices = list("2019", "2020", "2021"),
+                             selected = list("2019", "2020", "2021")
           ),
           selectInput("in_local_sexo", "Sexo:", multiple = TRUE,
                       list("masculino", "femenino"),
@@ -152,7 +172,7 @@ ui <- fluidPage(
             )
           ),
           fluidRow(
-            column(width=6,
+            column(width=4,
                    align="center",
                    img(src = "male.png",
                    alt = "male",
@@ -162,7 +182,13 @@ ui <- fluidPage(
                    h2(textOutput("out_text_hombre")),
                    h4("Masculino")
             ),
-            column(width=6,
+            column(width=4,
+                   align="center",
+                   plotOutput("out_plot_donut_localizacion", height="120px"),
+                   h2(textOutput("out_text_donut_localizacion")),
+                   #h2(tableOutput("out_table_donut"))
+            ),
+            column(width=4,
                    align="center",
                    img(src = "female.png",
                    alt = "female",
@@ -197,9 +223,13 @@ ui <- fluidPage(
       icon = icon("child"),
       sidebarLayout(
         sidebarPanel(
-          selectInput("in_pediatrico_year", "Año:", multiple = TRUE,
-                      list("2019", "2020", "2021"),
-                      list("2019", "2020", "2021")
+          #selectInput("in_pediatrico_year", "Año:", multiple = TRUE,
+          #            list("2019", "2020", "2021"),
+          #            list("2019", "2020", "2021")
+          #),
+          checkboxGroupInput("in_pediatrico_year", "Año:", inline = TRUE,
+                             choices = list("2019", "2020", "2021"),
+                             selected = list("2019", "2020", "2021")
           ),
           selectInput("in_pediatrico_sexo", "Sexo:", multiple = TRUE,
                       list("masculino", "femenino"),
@@ -229,6 +259,12 @@ ui <- fluidPage(
             ),
             column(width=4,
                    align="center",
+                   plotOutput("out_plot_pediatrico_boygirl", height="120px"),
+                   h2(textOutput("out_text_donut")),
+                   h2(tableOutput("out_table_donut"))
+            ),
+            column(width=4,
+                   align="center",
                    img(src = "girl.png",
                    alt = "girl",
                    width = 60,
@@ -236,12 +272,6 @@ ui <- fluidPage(
                    ),
                    h2(textOutput("out_text_girl")),
                    h4("Niñas")
-            ),
-            column(width=4,
-                   align="center",
-                   plotOutput("out_plot_pediatrico_boygirl", height="120px"),
-                   h2(textOutput("out_text_donut")),
-                   h2(tableOutput("out_table_donut"))
             )
           ),
           fluidRow(
@@ -341,8 +371,10 @@ server <- function(input, output, session) {
       left_join(dataProv) %>%
       mutate(TOTAL_CASOS = ifelse(is.na(TOTAL_CASOS), 0, TOTAL_CASOS))
     
-    paleta_de_color <- colorNumeric("Blues", NULL, n = nrow(map_region))
-    pal <- colorNumeric(palette="Blues", domain=map_region$TOTAL_CASOS)
+    #paleta_de_color <- colorNumeric("Blues", NULL, n = nrow(map_region))
+    paleta_de_color <- colorBin("Blues", NULL, n = nrow(map_region))
+    #pal <- colorNumeric(palette="Blues", domain=map_region$TOTAL_CASOS)
+    pal <- colorBin(palette="Blues", domain=map_region$TOTAL_CASOS)
     
     region_popup <- paste0(
       "<strong>Provincia: </strong>",
@@ -353,15 +385,19 @@ server <- function(input, output, session) {
     
     
     leaflet(data = map_region) %>%
-      addTiles() %>%
+      #addTiles() %>%
       addPolygons(
         fillColor = ~paleta_de_color(TOTAL_CASOS),
-        fillOpacity = 0.7,
+        fillOpacity = 0.8,
         color = "#808080",
         weight = 1
         , popup = region_popup
       ) %>%
-      addLegend(position='topright', pal=pal, values=~TOTAL_CASOS)
+      addLegend(position='topright',
+                pal=pal,
+                values=~TOTAL_CASOS,
+                labels=c("")
+      )
   })
   
   output$out_EstadioClinico <- renderPlot({
@@ -369,7 +405,8 @@ server <- function(input, output, session) {
     dataEstadioClinicoNew <- dataEstadioClinico %>% 
       filter(TOPONIMIA %in% input$in_map_prov) %>%
       filter(YEAR %in% input$in_map_year) %>%
-      mutate(TIPO = ifelse(TIPO == "9", "Desc.", TIPO))
+      filter(TIPO != "9")
+      #mutate(TIPO = ifelse(TIPO == "9", "Desc.", TIPO))
     
     prov <- dataEstadioClinicoNew$TOPONIMIA
     tipo <- dataEstadioClinicoNew$TIPO
@@ -381,9 +418,52 @@ server <- function(input, output, session) {
       xlab("Toponimia") +
       ylab("Casos") +
       #scale_fill_grey() + 
-      scale_fill_brewer(palette = "RdYlBu") +
+      scale_fill_brewer(palette = "PuBu") +
       theme_bw(base_size = 13) +
-      theme(axis.text.x=element_text(angle = -45, hjust = 0))
+      theme(axis.text.x=element_text(angle = -45, hjust = 0),
+            panel.background = element_blank(),
+            panel.grid = element_blank())
+  })
+  
+  
+  output$out_EstadioClinico_sum <- renderPlot({
+    
+    dataEstadioClinicoTable <- dataEstadioClinico %>%
+      filter(TOPONIMIA %in% input$in_map_prov) %>%
+      filter(YEAR %in% input$in_map_year) %>%
+      rename(CASOS = VAL) %>%
+      arrange(YEAR, TOPONIMIA, TIPO) %>%
+      rename("ESTADIO CLINICO" = TIPO)
+    
+    dataEstadioClinicoWider <- dataEstadioClinicoTable %>%
+      pivot_wider(names_from = "ESTADIO CLINICO",
+                  values_from = "CASOS") %>%
+      rename("DESCONOCIDO" = "9") %>%
+      mutate("CONOCIDO" = I + II + III + IV) %>%
+      select(YEAR, TOPONIMIA, DESCONOCIDO, CONOCIDO)
+    
+    dataEstadioClinicoLong <- dataEstadioClinicoWider %>%
+      pivot_longer(cols = c("DESCONOCIDO", "CONOCIDO"),
+                   names_to = "TIPO",
+                   values_to = "VAL"
+      )
+      
+      
+    prov <- dataEstadioClinicoLong$TOPONIMIA
+    tipo <- dataEstadioClinicoLong$TIPO
+    val <- dataEstadioClinicoLong$VAL
+    df <- data.frame(x = prov, y = val, EstadioClinico = tipo)
+    
+    ggplot(df, aes(x = x, y = y, fill = EstadioClinico)) +
+      geom_bar(position = "stack", stat = "identity") + 
+      xlab("Toponimia") +
+      ylab("Casos") +
+      #scale_fill_grey() + 
+      scale_fill_brewer(palette = "PuBu") +
+      theme_bw(base_size = 13) +
+      theme(axis.text.x=element_text(angle = -45, hjust = 0),
+            panel.background = element_blank(),
+            panel.grid = element_blank())
   })
   
   dataProvinciaTable <- reactive({
@@ -417,9 +497,9 @@ server <- function(input, output, session) {
       rename("Masc" = MASCULINO) %>%
       rename("Fem" = FEMENINO) %>%
       rename("TOTAL CASOS" = TOTAL_CASOS) %>%
-      select(YEAR, TOPONIMIA, Masc, Fem, "TOTAL CASOS")
+      select(YEAR, REGION, TOPONIMIA, Masc, Fem, "TOTAL CASOS")
     
-    dataProvinciaWider <- with(dataProvinciaWider, dataProvinciaWider[order(YEAR,TOPONIMIA),])
+    dataProvinciaWider <- with(dataProvinciaWider, dataProvinciaWider[order(YEAR,REGION, TOPONIMIA),])
   })
   
   output$out_table_Provincia <- renderTable({
@@ -478,14 +558,35 @@ server <- function(input, output, session) {
       filter(YEAR %in% input$in_hm_year) %>%
       filter(SEXO %in% input$in_hm_sexo) %>%
       filter(ETARIO %in% input$in_hm_etario)
+      
     
     dataHombreMujerTotal <- dataHombreMujerTotal %>%
       group_by(SEXO, ETARIO)  %>%
       summarise(TOTAL_CASOS=sum(CASOS))
+      
+      
+    maxCasos <- dataHombreMujerTotal %>%
+      filter(SEXO=="femenino") %>%
+      filter(TOTAL_CASOS==max(TOTAL_CASOS)) %>%
+      arrange(TOTAL_CASOS)
     
+    byNum <- 100
+    
+    if (nrow(maxCasos) == 0) maxCasos[1,] <- NA
+    if (is.na(maxCasos$TOTAL_CASOS)) maxCasos$TOTAL_CASOS <- 0
+    if (maxCasos$TOTAL_CASOS == 0) byNum <- 100
+    
+    
+    maxCasos$TOTAL_CASOS <- round(maxCasos$TOTAL_CASOS + 60, -2)
+    
+    #output$textTmp <- renderText(maxCasos$TOTAL_CASOS)
+    
+    #output$textTmp2 <- renderText(byNum)
+
     ## barplots for male populations goes to the left (thus negative sign)
     dataHombreMujerTotal$TOTAL_CASOS <- ifelse(dataHombreMujerTotal$SEXO == "masculino", -1*dataHombreMujerTotal$TOTAL_CASOS, dataHombreMujerTotal$TOTAL_CASOS)
     
+
     ## pyramid charts are two barcharts with axes flipped
     pyramidGH2 <- ggplot(dataHombreMujerTotal, aes(x = ETARIO, y = TOTAL_CASOS, fill = SEXO)) + 
       geom_bar(data = subset(dataHombreMujerTotal, SEXO == "femenino"), stat = "identity") +
@@ -493,13 +594,18 @@ server <- function(input, output, session) {
       
       #scale_fill_discrete(limits = c("masculino", "femenino")) +
       scale_fill_manual("", values = c("masculino" = "#5B9BD5", "femenino" = "#ED7D31")) + 
-      scale_y_continuous(limits = c(-1000, 1000),
-                         breaks = seq(-1000, 1000, 100),
-                         labels = as.character(c(seq(1000, 0, -100), seq(100, 1000, 100)))) +
+      scale_y_continuous(limits = c(maxCasos$TOTAL_CASOS*-1, maxCasos$TOTAL_CASOS),
+                         breaks = seq(maxCasos$TOTAL_CASOS*-1, maxCasos$TOTAL_CASOS, byNum),
+                         labels = as.character(c(seq(maxCasos$TOTAL_CASOS, 0, byNum*-1), seq(byNum, maxCasos$TOTAL_CASOS, byNum)))) +
+      #scale_y_continuous(limits = c(-1000, 1000),
+      #                   breaks = seq(-1000, 1000, 100),
+      #                   labels = as.character(c(seq(1000, 0, -100), seq(100, 1000, 100)))) +
       xlab("Grupo Etario") +
       ylab("Casos") +
       theme_bw(base_size = 13) +
-      coord_flip()
+      coord_flip() +
+      theme(panel.background = element_blank(),
+           panel.grid = element_blank())
     pyramidGH2
     
   })
@@ -559,6 +665,70 @@ server <- function(input, output, session) {
   ######################################################
   #  Topográficas
   ######################################################
+  output$out_plot_donut_localizacion <- renderPlot({
+    
+    dataLocalizacionNew <- dataLocalizacion %>%
+      filter(LOCALIZACION %in% input$in_local_localizacion) %>%
+      filter(YEAR %in% input$in_local_year) %>%
+      filter(SEXO %in% input$in_local_sexo) %>%
+      arrange(YEAR, SEXO, LOCALIZACION)
+    
+    dataLocalizacionTotal <- dataLocalizacionNew %>%
+      group_by(SEXO) %>%
+      summarise(total_val = sum(CASOS)) %>%
+      mutate(total_val = ifelse(is.na(total_val), 0, total_val))
+    
+    flgMasculino <- "masculino" %in% dataLocalizacionTotal$SEXO
+    flgFemenino <- "femenino" %in% dataLocalizacionTotal$SEXO
+    
+    totalHombre <- dataLocalizacionTotal %>%
+      filter(SEXO == "masculino")
+    
+    totalMujer <- dataLocalizacionTotal %>%
+      filter(SEXO == "femenino")
+    
+    #output$out_text_hombre <- renderText(ifelse(flgMasculino, format(totalHombre$total_val, big.mark = ","), "NA"))
+    #output$out_text_mujer <- renderText(ifelse(flgFemenino, format(totalMujer$total_val, big.mark = ","), "NA"))
+    
+    
+    # Create data.
+    data <- data.frame(
+      category=c("femenino", "masculino"),
+      count=c(ifelse(length(totalMujer$total_val) == 0, 0, totalMujer$total_val), 
+              ifelse(length(totalHombre$total_val) == 0, 0, totalHombre$total_val))
+    )
+    
+    #percentages
+    data$fraction <- data$count / sum(data$count)
+    
+    #cumulative percentages (top of each rectangle)
+    data$ymax <- cumsum(data$fraction)
+    
+    #the bottom of each rectangle
+    data$ymin <- c(0, head(data$ymax, n=-1))
+    
+    #label position
+    data$labelPosition <- (data$ymax + data$ymin) / 2
+    
+    #good label
+    #data$label <- paste0(data$category, "\n value: ", data$count)
+    data$label <- paste0(percent(data$fraction))
+    
+    data$label <- ifelse(data$label == "0.00%", "", data$label)
+    
+    ggplot(data, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=category)) +
+      geom_rect() +
+      scale_fill_manual("", values = c("masculino" = "#5B9BD5", "femenino" = "#ED7D31")) + 
+      #geom_text( x=5, aes(y=labelPosition, label=label, color=c("#17202A","#17202A")), size=4) + # x here controls label position (inner / outer)
+      geom_text( x=3.5, aes(y=labelPosition, label=label), size=4) + # x here controls label position (inner / outer)
+      #scale_fill_brewer(palette=3) +
+      #scale_color_brewer(palette=3) +
+      coord_polar(theta="y") +
+      xlim(c(2, 4)) +
+      theme_void() +
+      theme(legend.position = "none")
+  })
+  
   output$out_plot_localizacion <- renderPlot({
     
     dataLocalizacionNew <- dataLocalizacion %>%
@@ -609,7 +779,9 @@ server <- function(input, output, session) {
       theme_bw(base_size = 13) +
       scale_fill_manual("", values = c("masculino" = "#5B9BD5", "femenino" = "#ED7D31")) + 
       theme(axis.text.x=element_text(angle = -45, hjust = 0)) +
-      theme(legend.position = "none")
+      theme(legend.position = "none") +
+      theme(panel.background = element_blank(),
+            panel.grid = element_blank())
   })
   
   dataLocalizacionTable <- reactive({
@@ -748,7 +920,9 @@ server <- function(input, output, session) {
       theme_bw(base_size = 13) +
       scale_fill_manual("", values = c("masculino" = "#5B9BD5", "femenino" = "#ED7D31")) + 
       theme(axis.text.x=element_text(angle = -90, hjust = 0)) +
-      theme(legend.position = "none")
+      theme(legend.position = "none") +
+      theme(panel.background = element_blank(),
+            panel.grid = element_blank())
   })
   
   output$out_plot_pediatrico_liquido <- renderPlot({
@@ -770,7 +944,9 @@ server <- function(input, output, session) {
       theme_bw(base_size = 13) +
       scale_fill_manual("", values = c("masculino" = "#5B9BD5", "femenino" = "#ED7D31")) + 
       theme(axis.text.x=element_text(angle = -90, hjust = 0)) +
-      theme(legend.position = "none")
+      theme(legend.position = "none") +
+      theme(panel.background = element_blank(),
+            panel.grid = element_blank())
   })
   
   dataPediatricoSolidoWider <- reactive({

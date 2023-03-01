@@ -7,7 +7,7 @@
 2019,50-59,masculino,117
 2019,60-69,masculino,169
 2019,70-79,masculino,138
-2019,80 <,masculino,64
+2019,80 +,masculino,64
 2019,0-9,femenino,2
 2019,10-19,femenino,13
 2019,20-29,femenino,31
@@ -16,7 +16,7 @@
 2019,50-59,femenino,186
 2019,60-69,femenino,199
 2019,70-79,femenino,125
-2019,80 <,femenino,46
+2019,80 +,femenino,46
 2020,0-9,masculino,6
 2020,10-19,masculino,11
 2020,20-29,masculino,10
@@ -25,7 +25,7 @@
 2020,50-59,masculino,67
 2020,60-69,masculino,105
 2020,70-79,masculino,98
-2020,80 <,masculino,29
+2020,80 +,masculino,29
 2020,0-9,femenino,13
 2020,10-19,femenino,8
 2020,20-29,femenino,43
@@ -34,7 +34,7 @@
 2020,50-59,femenino,114
 2020,60-69,femenino,142
 2020,70-79,femenino,99
-2020,80 <,femenino,47
+2020,80 +,femenino,47
 2021,0-9,masculino,3
 2021,10-19,masculino,11
 2021,20-29,masculino,18
@@ -43,7 +43,7 @@
 2021,50-59,masculino,64
 2021,60-69,masculino,101
 2021,70-79,masculino,70
-2021,80 <,masculino,30
+2021,80 +,masculino,30
 2021,0-9,femenino,6
 2021,10-19,femenino,9
 2021,20-29,femenino,25
@@ -52,7 +52,7 @@
 2021,50-59,femenino,110
 2021,60-69,femenino,117
 2021,70-79,femenino,75
-2021,80 <,femenino,39
+2021,80 +,femenino,39
 2018,0-9,masculino,3
 2018,10-19,masculino,11
 2018,20-29,masculino,18
@@ -61,7 +61,7 @@
 2018,50-59,masculino,64
 2018,60-69,masculino,101
 2018,70-79,masculino,70
-2018,80 <,masculino,30
+2018,80 +,masculino,30
 2018,0-9,femenino,6
 2018,10-19,femenino,9
 2018,20-29,femenino,25
@@ -70,7 +70,7 @@
 2018,50-59,femenino,110
 2018,60-69,femenino,117
 2018,70-79,femenino,75
-2018,80 <,femenino,39
+2018,80 +,femenino,39
 2017,0-9,masculino,7
 2017,10-19,masculino,12
 2017,20-29,masculino,7
@@ -79,7 +79,7 @@
 2017,50-59,masculino,76
 2017,60-69,masculino,139
 2017,70-79,masculino,85
-2017,80 <,masculino,34
+2017,80 +,masculino,34
 2017,0-9,femenino,10
 2017,10-19,femenino,9
 2017,20-29,femenino,19
@@ -88,4 +88,4 @@
 2017,50-59,femenino,160
 2017,60-69,femenino,159
 2017,70-79,femenino,93
-2017,80 <,femenino,31
+2017,80 +,femenino,31
