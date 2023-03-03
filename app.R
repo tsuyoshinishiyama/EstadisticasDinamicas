@@ -23,10 +23,22 @@ dataPediatrico <- read.csv("data/dataPediatrico.csv")
 ui <- fluidPage(
 
   # Application title
-  titlePanel("Estadísticas Dinámicas"),
-    
+  titlePanel(
+    fluidRow(
+      column(9,
+             h4("Dirección de Investigación y Gestión del Conocimiento"),
+             h1("Estadísticas Dinámicas")
+      ), 
+      column(3,
+             img(height =130, width = 252, src = "INCART_Logo.png", style="text-align: center;vertical-align: middle;")
+      )
+    ),
+    fluidRow(
+      column(12, "Estadísticas Dinámicas")
+    )
+  ),
   tabsetPanel(type = "tabs",
-                
+
     ######################################################
     #  provinciales
     ######################################################
@@ -35,17 +47,10 @@ ui <- fluidPage(
       icon = icon("map-location-dot"),
       sidebarLayout(
         sidebarPanel(
-          #selectInput("in_map_year", "Año:", multiple = TRUE,
-          #            list("2017", "2018", "2019", "2020", "2021"),
-          #            list("2017", "2018", "2019", "2020", "2021")
-          #),
-          checkboxGroupInput("in_map_year", "Año:", inline = TRUE,
-                             choices = list("2017", "2018", "2019", "2020", "2021"),
-                             selected = list("2017", "2018", "2019", "2020", "2021"),
-          ),
-          selectInput("in_map_sexo", "Sexo(Aplicar sólo por provincia):", multiple = TRUE,
-                      list("masculino", "femenino"),
-                      list("masculino", "femenino")
+          uiOutput("ui_provincia_year"),
+          checkboxGroupInput("in_map_sexo", "Sexo(Aplicar sólo por provincia):", inline = TRUE,
+                      choices = list("masculino", "femenino"),
+                      selected = list("masculino", "femenino")
           ),
           checkboxGroupInput("in_map_prov", "Provincia:", inline = TRUE,
                              choices = unique(dataEstadioClinico$TOPONIMIA),
@@ -58,18 +63,22 @@ ui <- fluidPage(
           fluidRow(
             column(12,
                    h4("Total de casos por provincia"),
-                   leafletOutput("mymap",height = 300)
+                   leafletOutput("mymap",height = 300),
+                   h6("Fuente: Registro de cáncer, Dirección de Investigación y Gestión del Conocimiento del Instituto Nacional del Cáncer Rosa Emilia Sánchez Pérez de Tavares (INCART)")
             ),
             fluidRow(
               column(12,
-                     h4("Total de casos según provincia y estadio"),
+                     h4("Distribución de casos según provincia y estadío clínico"),
                      plotOutput("out_EstadioClinico"),
+                     h6("Fuente: Registro de cáncer, Dirección de Investigación y Gestión del Conocimiento del Instituto Nacional del Cáncer Rosa Emilia Sánchez Pérez de Tavares (INCART)")
               )
             ),
             fluidRow(
               column(12,
-                     h4("Total de casos según provincia y estadio con Desconocido"),
+                     h4("Distribución de casos según provincia y estadío clínico conocido o desconocido"),
                      plotOutput("out_EstadioClinico_sum"),
+                     h6("Fuente: Registro de cáncer, Dirección de Investigación y Gestión del Conocimiento del Instituto Nacional del Cáncer Rosa Emilia Sánchez Pérez de Tavares (INCART)"),
+                     tableOutput("out_table_temp")
               )
             ),
             fluidRow(
@@ -94,17 +103,10 @@ ui <- fluidPage(
       icon = icon("chart-simple"),
       sidebarLayout(
         sidebarPanel(
-          #selectInput("in_hm_year", "Año:", multiple = TRUE,
-          #            list("2017", "2018", "2019", "2020", "2021"),
-          #            list("2017", "2018", "2019", "2020", "2021")
-          #),
-          checkboxGroupInput("in_hm_year", "Año:", inline = TRUE,
-                             choices = list("2017", "2018", "2019", "2020", "2021"),
-                             selected = list("2017", "2018", "2019", "2020", "2021")
-          ),
-          selectInput("in_hm_sexo", "Sexo:", multiple = TRUE,
-                      list("masculino", "femenino"),
-                      list("masculino", "femenino")
+          uiOutput("ui_hombremujer_year"),
+          checkboxGroupInput("in_hm_sexo", "Sexo:", inline = TRUE,
+                      choices = list("masculino", "femenino"),
+                      selected = list("masculino", "femenino")
           ),
           checkboxGroupInput("in_hm_etario", "Grupo Etario:", inline = FALSE,
                              choices = unique(dataHombreMujer$ETARIO),
@@ -114,9 +116,6 @@ ui <- fluidPage(
         ),
                     
         mainPanel(
-          #fluidRow(
-          #  column(12,div(style = "height:30px;"))
-          #),
           fluidRow(
             column(width=6,
                    align="center",
@@ -127,10 +126,9 @@ ui <- fluidPage(
           ),
           fluidRow(
             column(width=12,
-                   textOutput("textTmp"),
-                   textOutput("textTmp2"),
                    h4("Total de casos por sexo"),
-                   plotOutput("distPlot")
+                   plotOutput("distPlot"),
+                   h6("Fuente: Registro de cáncer, Dirección de Investigación y Gestión del Conocimiento del Instituto Nacional del Cáncer Rosa Emilia Sánchez Pérez de Tavares (INCART)")
             )
           ),
           fluidRow(
@@ -150,15 +148,8 @@ ui <- fluidPage(
       icon = icon("person"),
       sidebarLayout(
         sidebarPanel(
-          #selectInput("in_local_year", "Año:", multiple = TRUE,
-          #            list("2019", "2020", "2021"),
-          #            list("2019", "2020", "2021")
-          #),
-          checkboxGroupInput("in_local_year", "Año:", inline = TRUE,
-                             choices = list("2019", "2020", "2021"),
-                             selected = list("2019", "2020", "2021")
-          ),
-          selectInput("in_local_sexo", "Sexo:", multiple = TRUE,
+          uiOutput("ui_local_year"),
+          checkboxGroupInput("in_local_sexo", "Sexo:", inline = TRUE,
                       list("masculino", "femenino"),
                       list("masculino", "femenino")
           ),
@@ -186,7 +177,6 @@ ui <- fluidPage(
                    align="center",
                    plotOutput("out_plot_donut_localizacion", height="120px"),
                    h2(textOutput("out_text_donut_localizacion")),
-                   #h2(tableOutput("out_table_donut"))
             ),
             column(width=4,
                    align="center",
@@ -203,7 +193,8 @@ ui <- fluidPage(
             column(12,
                    align="top",
                    h4("Los 10 Más Frecuentes"),
-                   plotOutput("out_plot_localizacion")
+                   plotOutput("out_plot_localizacion"),
+                   h6("Fuente: Registro de cáncer, Dirección de Investigación y Gestión del Conocimiento del Instituto Nacional del Cáncer Rosa Emilia Sánchez Pérez de Tavares (INCART)")
             )
           ),
           fluidRow(
@@ -223,15 +214,8 @@ ui <- fluidPage(
       icon = icon("child"),
       sidebarLayout(
         sidebarPanel(
-          #selectInput("in_pediatrico_year", "Año:", multiple = TRUE,
-          #            list("2019", "2020", "2021"),
-          #            list("2019", "2020", "2021")
-          #),
-          checkboxGroupInput("in_pediatrico_year", "Año:", inline = TRUE,
-                             choices = list("2019", "2020", "2021"),
-                             selected = list("2019", "2020", "2021")
-          ),
-          selectInput("in_pediatrico_sexo", "Sexo:", multiple = TRUE,
+          uiOutput("ui_pediatrico_year"),
+          checkboxGroupInput("in_pediatrico_sexo", "Sexo:", inline = TRUE,
                       list("masculino", "femenino"),
                       list("masculino", "femenino")
           ),
@@ -278,12 +262,14 @@ ui <- fluidPage(
             column(6,
                    align="center",
                    h4("Total de casos de diagnósticos tumores sólidos"),
-                   plotOutput("out_plot_pediatrico_solido")
+                   plotOutput("out_plot_pediatrico_solido"),
+                   h6("Fuente: Registro de cáncer, Dirección de Investigación y Gestión del Conocimiento del Instituto Nacional del Cáncer Rosa Emilia Sánchez Pérez de Tavares (INCART)")
             ),
             column(6,
                    align="center",
                    h4("Total de casos de diagnósticos tumores líquidos"),
-                   plotOutput("out_plot_pediatrico_liquido")
+                   plotOutput("out_plot_pediatrico_liquido"),
+                   h6("Fuente: Registro de cáncer, Dirección de Investigación y Gestión del Conocimiento del Instituto Nacional del Cáncer Rosa Emilia Sánchez Pérez de Tavares (INCART)")
             )
           ),
           fluidRow(
@@ -304,6 +290,52 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
 
+  ######################################################
+  #  UI Output
+  ######################################################
+  
+  output$ui_provincia_year <- renderUI({
+    dataEstadioClinicoYear <- dataEstadioClinico %>%
+      distinct(YEAR) %>%
+      arrange(YEAR)
+    
+    as.list(dataEstadioClinicoYear$YEAR)
+    
+    checkboxGroupInput("in_map_year",
+                       label = "Año:",
+                       inline = TRUE,
+                       choices = dataEstadioClinicoYear$YEAR,
+                       selected = dataEstadioClinicoYear$YEAR)
+  })
+  
+  output$ui_hombremujer_year <- renderUI({
+    dataHombreMujerYear <- dataHombreMujer %>%
+      distinct(YEAR) %>%
+      arrange(YEAR)
+    
+    as.list(dataHombreMujerYear$YEAR)
+    
+    checkboxGroupInput("in_hm_year",
+                       label = "Año:",
+                       inline = TRUE,
+                       choices = dataHombreMujerYear$YEAR,
+                       selected = dataHombreMujerYear$YEAR)
+  })
+  
+  output$ui_local_year <- renderUI({
+    dataLocalizacionYear <- dataLocalizacion %>%
+      distinct(YEAR) %>%
+      arrange(YEAR)
+    
+    as.list(dataLocalizacionYear$YEAR)
+    
+    checkboxGroupInput("in_local_year",
+                       label = "Año:",
+                       inline = TRUE,
+                       choices = dataLocalizacionYear$YEAR,
+                       selected = dataLocalizacionYear$YEAR)
+  })
+  
   output$ui_localizacion <- renderUI({
     dataLocalizacionChoices <- dataLocalizacion %>%
       distinct(LOCALIZACION) %>%
@@ -316,6 +348,20 @@ server <- function(input, output, session) {
                        inline = TRUE,
                        choices = dataLocalizacionChoices$LOCALIZACION,
                        selected = dataLocalizacionChoices$LOCALIZACION)
+  })
+  
+  output$ui_pediatrico_year <- renderUI({
+    dataPediatricoYear <- dataPediatrico %>%
+      distinct(YEAR) %>%
+      arrange(YEAR)
+    
+    as.list(dataPediatricoYear$YEAR)
+    
+    checkboxGroupInput("in_pediatrico_year",
+                       label = "Año:",
+                       inline = TRUE,
+                       choices = dataPediatricoYear$YEAR,
+                       selected = dataPediatricoYear$YEAR)
   })
   
   output$ui_pediatrico_diagnostico_solido <- renderUI({
@@ -406,8 +452,7 @@ server <- function(input, output, session) {
       filter(TOPONIMIA %in% input$in_map_prov) %>%
       filter(YEAR %in% input$in_map_year) %>%
       filter(TIPO != "9")
-      #mutate(TIPO = ifelse(TIPO == "9", "Desc.", TIPO))
-    
+
     prov <- dataEstadioClinicoNew$TOPONIMIA
     tipo <- dataEstadioClinicoNew$TIPO
     val <- dataEstadioClinicoNew$VAL
@@ -417,10 +462,9 @@ server <- function(input, output, session) {
       geom_bar(position = "stack", stat = "identity") + 
       xlab("Toponimia") +
       ylab("Casos") +
-      #scale_fill_grey() + 
       scale_fill_brewer(palette = "PuBu") +
       theme_bw(base_size = 13) +
-      theme(axis.text.x=element_text(angle = -45, hjust = 0),
+      theme(axis.text.x=element_text(angle = -90, hjust = 0),
             panel.background = element_blank(),
             panel.grid = element_blank())
   })
@@ -428,26 +472,29 @@ server <- function(input, output, session) {
   
   output$out_EstadioClinico_sum <- renderPlot({
     
-    dataEstadioClinicoTable <- dataEstadioClinico %>%
+    dataEstadioClinicoSum <- dataEstadioClinico %>%
       filter(TOPONIMIA %in% input$in_map_prov) %>%
       filter(YEAR %in% input$in_map_year) %>%
       rename(CASOS = VAL) %>%
       arrange(YEAR, TOPONIMIA, TIPO) %>%
       rename("ESTADIO CLINICO" = TIPO)
     
-    dataEstadioClinicoWider <- dataEstadioClinicoTable %>%
+    dataEstadioClinicoSumWider <- dataEstadioClinicoSum %>%
       pivot_wider(names_from = "ESTADIO CLINICO",
-                  values_from = "CASOS") %>%
+                  values_from = "CASOS")
+    
+    dataEstadioClinicoSumWider <- dataEstadioClinicoSumWider %>%
       rename("DESCONOCIDO" = "9") %>%
       mutate("CONOCIDO" = I + II + III + IV) %>%
       select(YEAR, TOPONIMIA, DESCONOCIDO, CONOCIDO)
     
-    dataEstadioClinicoLong <- dataEstadioClinicoWider %>%
+    #output$out_table_temp <- renderTable(dataEstadioClinicoSumWider)
+    
+    dataEstadioClinicoLong <- dataEstadioClinicoSumWider %>%
       pivot_longer(cols = c("DESCONOCIDO", "CONOCIDO"),
                    names_to = "TIPO",
                    values_to = "VAL"
       )
-      
       
     prov <- dataEstadioClinicoLong$TOPONIMIA
     tipo <- dataEstadioClinicoLong$TIPO
@@ -458,10 +505,9 @@ server <- function(input, output, session) {
       geom_bar(position = "stack", stat = "identity") + 
       xlab("Toponimia") +
       ylab("Casos") +
-      #scale_fill_grey() + 
-      scale_fill_brewer(palette = "PuBu") +
+      scale_fill_brewer(palette = "Paired") +
       theme_bw(base_size = 13) +
-      theme(axis.text.x=element_text(angle = -45, hjust = 0),
+      theme(axis.text.x=element_text(angle = -90, hjust = 0),
             panel.background = element_blank(),
             panel.grid = element_blank())
   })
@@ -579,9 +625,6 @@ server <- function(input, output, session) {
     
     maxCasos$TOTAL_CASOS <- round(maxCasos$TOTAL_CASOS + 60, -2)
     
-    #output$textTmp <- renderText(maxCasos$TOTAL_CASOS)
-    
-    #output$textTmp2 <- renderText(byNum)
 
     ## barplots for male populations goes to the left (thus negative sign)
     dataHombreMujerTotal$TOTAL_CASOS <- ifelse(dataHombreMujerTotal$SEXO == "masculino", -1*dataHombreMujerTotal$TOTAL_CASOS, dataHombreMujerTotal$TOTAL_CASOS)
@@ -604,7 +647,8 @@ server <- function(input, output, session) {
       ylab("Casos") +
       theme_bw(base_size = 13) +
       coord_flip() +
-      theme(panel.background = element_blank(),
+      theme(axis.text.x=element_text(angle = 0, hjust = 0),
+            panel.background = element_blank(),
            panel.grid = element_blank())
     pyramidGH2
     
@@ -778,7 +822,7 @@ server <- function(input, output, session) {
       ylab("Casos") +
       theme_bw(base_size = 13) +
       scale_fill_manual("", values = c("masculino" = "#5B9BD5", "femenino" = "#ED7D31")) + 
-      theme(axis.text.x=element_text(angle = -45, hjust = 0)) +
+      theme(axis.text.x=element_text(angle = -90, hjust = 0)) +
       theme(legend.position = "none") +
       theme(panel.background = element_blank(),
             panel.grid = element_blank())
