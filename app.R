@@ -13,15 +13,27 @@ library(leaflet)
 library(sf)
 library(png)
 library("formattable")
+library(shinyjs)
 
+dataMortalidad <- read.csv("data/dataMortalidad.csv")
 dataProv <- read.csv("data/dataProvincia.csv")
 dataEstadioClinico <- read.csv("data/dataEstadioClinico.csv")
 dataLocalizacion <- read.csv("data/dataLocalizacion.csv")
 dataHombreMujer <- read.csv("data/dataHombreMujer.csv")
 dataPediatrico <- read.csv("data/dataPediatrico.csv")
 
-ui <- fluidPage(
+# #DE3163 Dark Pink
+# #2874A6 Dark Blue
 
+#https://icons8.com/icons/set/standing-man
+#https://icons8.com/icons/set/woman
+#https://icons8.com/icons/set/boy
+#https://icons8.com/icons/set/girl
+
+ui <- fluidPage(
+  
+  useShinyjs(),
+  
   # Application title
   titlePanel(
     fluidRow(
@@ -40,6 +52,92 @@ ui <- fluidPage(
   tabsetPanel(type = "tabs",
 
     ######################################################
+    #  Mortalidad
+    ######################################################
+    tabPanel(
+      title = "Incidencia, Supervivencia y Mortalidad",
+      icon = icon("chart-line"),
+      sidebarLayout(
+        sidebarPanel(
+          uiOutput("ui_mortalidad_year"),
+          sliderInput("year", "Año:", 
+                      min=2019,
+                      max=2021,
+                      value=c(2019, 2021),
+                      sep=""
+          ),
+          checkboxGroupInput("in_mortalidad_sexo", "Sexo:", inline = TRUE,
+                             choices = list("masculino", "femenino"),
+                             selected = list("masculino", "femenino")
+          ),
+          strong("Mostrar cuadro:"),
+          checkboxInput("in_MostrarCuadrosMortalidad", label = "Muéstrame", value = FALSE),
+          downloadButton("downloadDataMortalidad", "Download:Cuadro1"),
+        ),
+        mainPanel(
+          fluidRow(
+            column(12,
+                   h4("Grafico de Mortalidad - INCART")
+            )
+          ),
+          fluidRow(
+            column(8,
+                   
+                   plotOutput("out_plot_mortalidad", height="300px"),
+                   h6("Fuente: Registro de cáncer, Dirección de Investigación y Gestión del Conocimiento del Instituto Nacional del Cáncer Rosa Emilia Sánchez Pérez de Tavares (INCART)")
+            ),
+            column(4,
+                   fluidRow(
+                     column(6,
+                            align="center",
+                            img(src = "icons8-standing-man-100.png",
+                                alt = "male",
+                                width = 100,
+                                height = 100
+                            ),
+                            h2(textOutput("out_text_mortalidad_hombre"))
+                     ),
+                     column(6,
+                            align="center",
+                            img(src = "icons8-woman-100.png",
+                                alt = "female",
+                                width = 100,
+                                height = 100
+                            ),
+                            h2(textOutput("out_text_mortalidad_mujer"))
+                     ),
+                   ),
+                   fluidRow(
+                     column(12,
+                            align="center",
+                            img(src = "flecha.png",
+                                alt = "flecha",
+                                width = 40,
+                                height = 40
+                            ),
+                            h2(textOutput("out_text_mortalidad_total"))
+                            )
+                   )
+            )
+          ),
+          fluidRow(
+            column(12,
+                   h4("Grafico de Supervivencia - INCART")
+            )
+          ),
+          fluidRow(
+            column(12,
+                   h4("Grafico de Incidencia - INCART")
+            )
+          ),
+        )
+      
+      )
+    ),
+    
+              
+    
+    ######################################################
     #  provinciales
     ######################################################
     tabPanel(
@@ -47,7 +145,14 @@ ui <- fluidPage(
       icon = icon("map-location-dot"),
       sidebarLayout(
         sidebarPanel(
-          uiOutput("ui_provincia_year"),
+          #uiOutput("ui_provincia_year"),
+          checkboxGroupInput("in_map_year",
+                             label = "Año:",
+                             inline = TRUE,
+                             choices = list("2017", "2018", "2019", "2020", "2021"),
+                             selected = list("2017", "2018", "2019", "2020", "2021")
+          ),
+          
           checkboxGroupInput("in_map_sexo", "Sexo(Aplicar sólo por provincia):", inline = TRUE,
                       choices = list("masculino", "femenino"),
                       selected = list("masculino", "femenino")
@@ -56,6 +161,7 @@ ui <- fluidPage(
                              choices = unique(dataEstadioClinico$TOPONIMIA),
                              selected = unique(dataEstadioClinico$TOPONIMIA),
           ),
+          checkboxInput("in_MostrarCuadrosProvincia", label = "Mostrar Cuadros", value = FALSE),
           downloadButton("downloadDataProvincia", "Download:Cuadro1"),
           downloadButton("downloadDataEstadio", "Download:Cuadro2")
         ),
@@ -83,11 +189,13 @@ ui <- fluidPage(
             ),
             fluidRow(
               column(6,
-                     h4("Cuadro1:Total de casos por provincia"),
+                     #h4("Cuadro1:Total de casos por provincia"),
+                     h4(textOutput("out_text_provincia_cuadro1")),
                      tableOutput("out_table_Provincia")
               ),
               column(6,
-                     h4("Cuadro2:Total de casos según provincia y estadio"),
+                     #h4("Cuadro2:Total de casos según provincia y estadio"),
+                     h4(textOutput("out_text_provincia_cuadro2")),
                      tableOutput("out_table_Estadio")
               ),
             )
@@ -112,6 +220,7 @@ ui <- fluidPage(
                              choices = unique(dataHombreMujer$ETARIO),
                              selected = unique(dataHombreMujer$ETARIO)
           ),
+          checkboxInput("in_MostrarCuadrosSexo", label = "Mostrar Cuadros", value = FALSE),
           downloadButton("downloadDataHombreMujer", "Download")
         ),
                     
@@ -133,7 +242,8 @@ ui <- fluidPage(
           ),
           fluidRow(
             column(width=12,
-                   h4("Cuadro:Total de casos por sexo"),
+                   #h4("Cuadro:Total de casos por sexo"),
+                   h4(textOutput("out_text_sexo_cuadro")),
                    tableOutput("disttable")
             )
           )
@@ -154,6 +264,7 @@ ui <- fluidPage(
                       list("masculino", "femenino")
           ),
           uiOutput("ui_localizacion"),
+          checkboxInput("in_MostrarCuadrosLocal", label = "Mostrar Cuadros", value = FALSE),
           downloadButton("downloadDataLocalizacion", "Download:Cuadro")
         ),
         mainPanel(
@@ -165,7 +276,7 @@ ui <- fluidPage(
           fluidRow(
             column(width=4,
                    align="center",
-                   img(src = "male.png",
+                   img(src = "icons8-standing-man-100.png",
                    alt = "male",
                    width = 100,
                    height = 100
@@ -180,7 +291,7 @@ ui <- fluidPage(
             ),
             column(width=4,
                    align="center",
-                   img(src = "female.png",
+                   img(src = "icons8-woman-100.png",
                    alt = "female",
                    width = 100,
                    height = 100
@@ -199,7 +310,8 @@ ui <- fluidPage(
           ),
           fluidRow(
             column(12,
-                   h4("Cuadro:Total de casos según localización de tumor"),
+                   #h4("Cuadro:Total de casos según localización de tumor"),
+                   h4(textOutput("out_text_localizacion_cuadro")),
                    tableOutput("out_table_localizacion")
             )
           )
@@ -221,6 +333,7 @@ ui <- fluidPage(
           ),
           uiOutput("ui_pediatrico_diagnostico_solido"),
           uiOutput("ui_pediatrico_diagnostico_liquido"),
+          checkboxInput("in_MostrarCuadrosPediatrico", label = "Mostrar Cuadros", value = FALSE),
           downloadButton("downloadDataPediatricoSolido", "Download:Cuadro1"),
           downloadButton("downloadDataPediatricoLiquido", "Download:Cuadro2")
         ),
@@ -233,9 +346,9 @@ ui <- fluidPage(
           fluidRow(
             column(width=4,
                    align="center",
-                   img(src = "boy.png",
+                   img(src = "icons8-boy-100.png",
                    alt = "boy",
-                   width = 60,
+                   width = 100,
                    height = 100
                    ),
                    h2(textOutput("out_text_boy")),
@@ -249,9 +362,9 @@ ui <- fluidPage(
             ),
             column(width=4,
                    align="center",
-                   img(src = "girl.png",
+                   img(src = "icons8-girl-100.png",
                    alt = "girl",
-                   width = 60,
+                   width = 100,
                    height = 100
                    ),
                    h2(textOutput("out_text_girl")),
@@ -274,11 +387,13 @@ ui <- fluidPage(
           ),
           fluidRow(
             column(6,
-                   h4("Cuadro1:Total de casos de diagnósticos tumores sólidos"),
+                   #h4("Cuadro1:Total de casos de diagnósticos tumores sólidos"),
+                   h4(textOutput("out_text_pediatrico_solido_cuadro")),
                    tableOutput("out_table_pediatrico_solido")
             ),
             column(6,
-                   h4("Cuadro2:Total de casos de diagnósticos tumores líquidos"),
+                   #h4("Cuadro2:Total de casos de diagnósticos tumores líquidos"),
+                   h4(textOutput("out_text_pediatrico_liquido_cuadro")),
                    tableOutput("out_table_pediatrico_liquido")
             )
           )
@@ -293,6 +408,20 @@ server <- function(input, output, session) {
   ######################################################
   #  UI Output
   ######################################################
+  
+  output$ui_mortalidad_year <- renderUI({
+    dataMortalidadYear <- dataMortalidad %>%
+      distinct(YEAR) %>%
+      arrange(YEAR)
+    
+    as.list(dataMortalidadYear$YEAR)
+    
+    checkboxGroupInput("in_mortalidad_year",
+                       label = "Año:",
+                       inline = TRUE,
+                       choices = dataMortalidadYear$YEAR,
+                       selected = dataMortalidadYear$YEAR)
+  })
   
   output$ui_provincia_year <- renderUI({
     dataEstadioClinicoYear <- dataEstadioClinico %>%
@@ -394,6 +523,117 @@ server <- function(input, output, session) {
                        selected = dataPediatricoChoices$DIAGNOSTICO)
   })
   
+  observeEvent(input$in_MostrarCuadrosProvincia, {
+    if (input$in_MostrarCuadrosProvincia) {
+      show("out_table_Provincia")
+      show("out_table_Estadio")
+      show("out_text_provincia_cuadro1")
+      output$out_text_provincia_cuadro1 <- renderText("Cuadro1:Total de casos por provincia")
+      show("out_text_provincia_cuadro2")
+      output$out_text_provincia_cuadro2 <- renderText("Cuadro2:Total de casos según provincia y estadio")
+     } else {
+      hide("out_table_Provincia")
+      hide("out_table_Estadio")
+      hide("out_text_provincia_cuadro1")
+      hide("out_text_provincia_cuadro2")
+     }
+  })
+  
+
+  observeEvent(input$in_MostrarCuadrosSexo, {
+    if (input$in_MostrarCuadrosSexo) {
+      show("disttable")
+      show("out_text_sexo_cuadro")
+      output$out_text_sexo_cuadro <- renderText("Cuadro:Total de casos por sexo")
+    } else {
+      hide("disttable")
+      hide("out_text_sexo_cuadro")
+    }
+  })
+  
+  observeEvent(input$in_MostrarCuadrosLocal, {
+    if (input$in_MostrarCuadrosLocal) {
+      show("out_table_localizacion")
+      show("out_text_localizacion_cuadro")
+      output$out_text_localizacion_cuadro <- renderText("Cuadro:Total de casos según localización de tumor")
+    } else {
+      hide("out_table_localizacion")
+      hide("out_text_localizacion_cuadro")
+    }
+  })
+  
+  observeEvent(input$in_MostrarCuadrosPediatrico, {
+    if (input$in_MostrarCuadrosPediatrico) {
+      show("out_table_pediatrico_solido")
+      show("out_table_pediatrico_liquido")
+      show("out_text_pediatrico_solido_cuadro")
+      output$out_text_pediatrico_solido_cuadro <- renderText("Cuadro1:Total de casos de diagnósticos tumores sólidos")
+      show("out_text_pediatrico_liquido_cuadro")
+      output$out_text_pediatrico_liquido_cuadro <- renderText("Cuadro2:Total de casos de diagnósticos tumores líquidos")
+    } else {
+      hide("out_table_pediatrico_solido")
+      hide("out_table_pediatrico_liquido")
+      hide("out_text_pediatrico_solido_cuadro")
+      hide("out_text_pediatrico_liquido_cuadro")
+    }
+  })
+  
+  ######################################################
+  #  Mortalidad
+  ######################################################  
+  output$out_plot_mortalidad <- renderPlot({
+    
+    dataMortalidadNew <- dataMortalidad %>%
+      filter(YEAR %in% input$in_mortalidad_year) %>%
+      filter(SEXO %in% input$in_mortalidad_sexo) %>%
+      arrange(YEAR, SEXO)
+    
+    dataMortalidadTotal <- dataMortalidadNew %>%
+      group_by(SEXO) %>%
+      summarise(total_val = sum(CASOS)) %>%
+      mutate(total_val = ifelse(is.na(total_val), 0, total_val))
+    
+    flgMasculino <- "masculino" %in% dataMortalidadTotal$SEXO
+    flgFemenino <- "femenino" %in% dataMortalidadTotal$SEXO
+    
+    totalHombre <- dataMortalidadTotal %>%
+      filter(SEXO == "masculino")
+    
+    totalMujer <- dataMortalidadTotal %>%
+      filter(SEXO == "femenino")
+    
+    output$out_text_mortalidad_hombre <- renderText(ifelse(flgMasculino, format(totalHombre$total_val, big.mark = ","), "NA"))
+    output$out_text_mortalidad_mujer <- renderText(ifelse(flgFemenino, format(totalMujer$total_val, big.mark = ","), "NA"))
+    
+    output$out_text_mortalidad_total <- renderText(format(ifelse(flgMasculino, totalHombre$total_val, 0) + ifelse(flgFemenino, totalMujer$total_val, 0), big.mark = ","))
+    
+    dataMortalidadNew <- dataMortalidadNew %>%
+      group_by(YEAR, SEXO)  %>%
+      summarise(total_val = sum(CASOS))
+      #arrange(desc(total_val))
+    
+
+    
+    yearBy <- dataMortalidadNew$YEAR
+    tipo <- dataMortalidadNew$SEXO
+    val <- dataMortalidadNew$total_val
+    df <- data.frame(x = yearBy, y = val, sexo = tipo)
+    
+    Early <- df %>% filter(x <= 2021)
+    Late <- df %>% filter(x >= 2021)
+    
+    ggplot(df, aes(x = x, y = y, group = sexo, color = sexo)) +
+      geom_line(linetype = 1, data = Early) + geom_line(linetype = 2, data = Late) +
+      scale_color_manual(values = c("masculino" = "#2874A6", "femenino" = "#DE3163")) +
+      xlab("Año") +
+      ylab("Taza por 10*5 personas") +
+      theme_bw(base_size = 13) +
+      theme(axis.text.x=element_text(angle = 90, hjust = 0)) +
+      theme(legend.position = "none") +
+      theme(panel.background = element_blank(),
+            panel.grid = element_blank())
+  })
+  
   
   ######################################################
   #  provinciales
@@ -451,8 +691,8 @@ server <- function(input, output, session) {
     dataEstadioClinicoNew <- dataEstadioClinico %>% 
       filter(TOPONIMIA %in% input$in_map_prov) %>%
       filter(YEAR %in% input$in_map_year) %>%
-      filter(TIPO != "9")
-
+      filter(TIPO != "IX")
+    
     prov <- dataEstadioClinicoNew$TOPONIMIA
     tipo <- dataEstadioClinicoNew$TIPO
     val <- dataEstadioClinicoNew$VAL
@@ -464,12 +704,12 @@ server <- function(input, output, session) {
       ylab("Casos") +
       scale_fill_brewer(palette = "PuBu") +
       theme_bw(base_size = 13) +
-      theme(axis.text.x=element_text(angle = -90, hjust = 0),
+      theme(axis.text.x=element_text(angle = 90, hjust = 0),
             panel.background = element_blank(),
             panel.grid = element_blank())
   })
   
-  
+
   output$out_EstadioClinico_sum <- renderPlot({
     
     dataEstadioClinicoSum <- dataEstadioClinico %>%
@@ -478,17 +718,28 @@ server <- function(input, output, session) {
       rename(CASOS = VAL) %>%
       arrange(YEAR, TOPONIMIA, TIPO) %>%
       rename("ESTADIO CLINICO" = TIPO)
+
+    
+    if(nrow(dataEstadioClinicoSum) == 0)
+      stop("No es error, sino no hay resultado...")
+
     
     dataEstadioClinicoSumWider <- dataEstadioClinicoSum %>%
-      pivot_wider(names_from = "ESTADIO CLINICO",
+      pivot_wider(., names_from = "ESTADIO CLINICO",
                   values_from = "CASOS")
     
+
+    #print(colnames(dataEstadioClinicoSumWider))
+    
     dataEstadioClinicoSumWider <- dataEstadioClinicoSumWider %>%
-      rename("DESCONOCIDO" = "9") %>%
+      #mutate("DESCONOCIDO" = IX) %>%
+      #mutate("CONOCIDO" = I + II + III + IV)
+      rename("DESCONOCIDO" = IX) %>%
       mutate("CONOCIDO" = I + II + III + IV) %>%
       select(YEAR, TOPONIMIA, DESCONOCIDO, CONOCIDO)
     
-    #output$out_table_temp <- renderTable(dataEstadioClinicoSumWider)
+    #print(colnames(dataEstadioClinicoSumWider))
+    
     
     dataEstadioClinicoLong <- dataEstadioClinicoSumWider %>%
       pivot_longer(cols = c("DESCONOCIDO", "CONOCIDO"),
@@ -507,9 +758,10 @@ server <- function(input, output, session) {
       ylab("Casos") +
       scale_fill_brewer(palette = "Paired") +
       theme_bw(base_size = 13) +
-      theme(axis.text.x=element_text(angle = -90, hjust = 0),
+      theme(axis.text.x=element_text(angle = 90, hjust = 0),
             panel.background = element_blank(),
             panel.grid = element_blank())
+    
   })
   
   dataProvinciaTable <- reactive({
@@ -546,6 +798,8 @@ server <- function(input, output, session) {
       select(YEAR, REGION, TOPONIMIA, Masc, Fem, "TOTAL CASOS")
     
     dataProvinciaWider <- with(dataProvinciaWider, dataProvinciaWider[order(YEAR,REGION, TOPONIMIA),])
+    
+  
   })
   
   output$out_table_Provincia <- renderTable({
@@ -565,17 +819,17 @@ server <- function(input, output, session) {
   
   dataEstadioClinicoTable <- reactive({
     
-    dataEstadioClinicoTable <- dataEstadioClinico %>%
+    dataEstadioClinicoTmp <- dataEstadioClinico %>%
       filter(TOPONIMIA %in% input$in_map_prov) %>%
       filter(YEAR %in% input$in_map_year) %>%
       rename(CASOS = VAL) %>%
       arrange(YEAR, TOPONIMIA, TIPO) %>%
       rename("ESTADIO CLINICO" = TIPO)
     
-    dataEstadioClinicoWider <- dataEstadioClinicoTable %>%
-      pivot_wider(names_from = "ESTADIO CLINICO",
+    dataEstadioClinicoWider <- dataEstadioClinicoTmp %>%
+      pivot_wider(., names_from = "ESTADIO CLINICO",
                   values_from = "CASOS") %>%
-      rename("DESCONOCIDO" = "9") %>%
+      rename("DESCONOCIDO" = IX) %>%
       mutate("TOTAL CASOS" = DESCONOCIDO + I + II + III + IV) %>%
       select(YEAR, TOPONIMIA, I, II, III, IV, DESCONOCIDO, "TOTAL CASOS")
     
@@ -628,7 +882,7 @@ server <- function(input, output, session) {
 
     ## barplots for male populations goes to the left (thus negative sign)
     dataHombreMujerTotal$TOTAL_CASOS <- ifelse(dataHombreMujerTotal$SEXO == "masculino", -1*dataHombreMujerTotal$TOTAL_CASOS, dataHombreMujerTotal$TOTAL_CASOS)
-    
+
 
     ## pyramid charts are two barcharts with axes flipped
     pyramidGH2 <- ggplot(dataHombreMujerTotal, aes(x = ETARIO, y = TOTAL_CASOS, fill = SEXO)) + 
@@ -636,7 +890,8 @@ server <- function(input, output, session) {
       geom_bar(data = subset(dataHombreMujerTotal, SEXO == "masculino"), stat = "identity") + 
       
       #scale_fill_discrete(limits = c("masculino", "femenino")) +
-      scale_fill_manual("", values = c("masculino" = "#5B9BD5", "femenino" = "#ED7D31")) + 
+      #scale_fill_manual("", values = c("masculino" = "#5B9BD5", "femenino" = "#ED7D31")) +
+      scale_fill_manual("", values = c("masculino" = "#2874A6", "femenino" = "#DE3163")) + 
       scale_y_continuous(limits = c(maxCasos$TOTAL_CASOS*-1, maxCasos$TOTAL_CASOS),
                          breaks = seq(maxCasos$TOTAL_CASOS*-1, maxCasos$TOTAL_CASOS, byNum),
                          labels = as.character(c(seq(maxCasos$TOTAL_CASOS, 0, byNum*-1), seq(byNum, maxCasos$TOTAL_CASOS, byNum)))) +
@@ -762,7 +1017,7 @@ server <- function(input, output, session) {
     
     ggplot(data, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=category)) +
       geom_rect() +
-      scale_fill_manual("", values = c("masculino" = "#5B9BD5", "femenino" = "#ED7D31")) + 
+      scale_fill_manual("", values = c("masculino" = "#2874A6", "femenino" = "#DE3163")) + 
       #geom_text( x=5, aes(y=labelPosition, label=label, color=c("#17202A","#17202A")), size=4) + # x here controls label position (inner / outer)
       geom_text( x=3.5, aes(y=labelPosition, label=label), size=4) + # x here controls label position (inner / outer)
       #scale_fill_brewer(palette=3) +
@@ -821,8 +1076,8 @@ server <- function(input, output, session) {
       xlab("Localización") +
       ylab("Casos") +
       theme_bw(base_size = 13) +
-      scale_fill_manual("", values = c("masculino" = "#5B9BD5", "femenino" = "#ED7D31")) + 
-      theme(axis.text.x=element_text(angle = -90, hjust = 0)) +
+      scale_fill_manual("", values = c("masculino" = "#2874A6", "femenino" = "#DE3163")) + 
+      theme(axis.text.x=element_text(angle = 90, hjust = 0)) +
       theme(legend.position = "none") +
       theme(panel.background = element_blank(),
             panel.grid = element_blank())
@@ -934,7 +1189,7 @@ server <- function(input, output, session) {
     
     ggplot(data, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=category)) +
       geom_rect() +
-      scale_fill_manual("", values = c("masculino" = "#5B9BD5", "femenino" = "#ED7D31")) + 
+      scale_fill_manual("", values = c("masculino" = "#2874A6", "femenino" = "#DE3163")) + 
       #geom_text( x=5, aes(y=labelPosition, label=label, color=c("#17202A","#17202A")), size=4) + # x here controls label position (inner / outer)
       geom_text( x=3.5, aes(y=labelPosition, label=label), size=4) + # x here controls label position (inner / outer)
       #scale_fill_brewer(palette=3) +
@@ -962,8 +1217,8 @@ server <- function(input, output, session) {
       xlab("Diagnósticos tumores  sólidos") +
       ylab("Casos") +
       theme_bw(base_size = 13) +
-      scale_fill_manual("", values = c("masculino" = "#5B9BD5", "femenino" = "#ED7D31")) + 
-      theme(axis.text.x=element_text(angle = -90, hjust = 0)) +
+      scale_fill_manual("", values = c("masculino" = "#2874A6", "femenino" = "#DE3163")) + 
+      theme(axis.text.x=element_text(angle = 90, hjust = 0)) +
       theme(legend.position = "none") +
       theme(panel.background = element_blank(),
             panel.grid = element_blank())
@@ -986,8 +1241,8 @@ server <- function(input, output, session) {
       xlab("Diagnósticos tumores líquidos") +
       ylab("Casos") +
       theme_bw(base_size = 13) +
-      scale_fill_manual("", values = c("masculino" = "#5B9BD5", "femenino" = "#ED7D31")) + 
-      theme(axis.text.x=element_text(angle = -90, hjust = 0)) +
+      scale_fill_manual("", values = c("masculino" = "#2874A6", "femenino" = "#DE3163")) + 
+      theme(axis.text.x=element_text(angle = 90, hjust = 0)) +
       theme(legend.position = "none") +
       theme(panel.background = element_blank(),
             panel.grid = element_blank())
