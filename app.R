@@ -18,6 +18,7 @@ library(shinyjs)
 dataMortalidad <- read.csv("data/dataMortalidad.csv")
 dataProv <- read.csv("data/dataProvincia.csv")
 dataEstadioClinico <- read.csv("data/dataEstadioClinico.csv")
+dataEstadioClinicoWider <- read.csv("data/dataEstadioClinicoWider.csv")
 dataLocalizacion <- read.csv("data/dataLocalizacion.csv")
 dataHombreMujer <- read.csv("data/dataHombreMujer.csv")
 dataPediatrico <- read.csv("data/dataPediatrico.csv")
@@ -145,13 +146,13 @@ ui <- fluidPage(
       icon = icon("map-location-dot"),
       sidebarLayout(
         sidebarPanel(
-          #uiOutput("ui_provincia_year"),
-          checkboxGroupInput("in_map_year",
-                             label = "Año:",
-                             inline = TRUE,
-                             choices = list("2017", "2018", "2019", "2020", "2021"),
-                             selected = list("2017", "2018", "2019", "2020", "2021")
-          ),
+          uiOutput("ui_provincia_year"),
+          #checkboxGroupInput("in_map_year",
+          #                   label = "Año:",
+          #                   inline = TRUE,
+          #                   choices = list("2017", "2018", "2019", "2020", "2021"),
+          #                   selected = list("2017", "2018", "2019", "2020", "2021")
+          #),
           
           checkboxGroupInput("in_map_sexo", "Sexo(Aplicar sólo por provincia):", inline = TRUE,
                       choices = list("masculino", "femenino"),
@@ -712,21 +713,21 @@ server <- function(input, output, session) {
 
   output$out_EstadioClinico_sum <- renderPlot({
     
-    dataEstadioClinicoSum <- dataEstadioClinico %>%
+    dataEstadioClinicoSumWider <- dataEstadioClinicoWider %>%
       filter(TOPONIMIA %in% input$in_map_prov) %>%
-      filter(YEAR %in% input$in_map_year) %>%
-      rename(CASOS = VAL) %>%
-      arrange(YEAR, TOPONIMIA, TIPO) %>%
-      rename("ESTADIO CLINICO" = TIPO)
+      filter(YEAR %in% input$in_map_year)
+      #rename(CASOS = VAL) %>%
+      #arrange(YEAR, TOPONIMIA, TIPO) %>%
+      #rename("ESTADIO CLINICO" = TIPO)
 
     
-    if(nrow(dataEstadioClinicoSum) == 0)
-      stop("No es error, sino no hay resultado...")
+    #if(nrow(dataEstadioClinicoSum) == 0)
+    #  stop("No es error, sino no hay resultado...")
 
     
-    dataEstadioClinicoSumWider <- dataEstadioClinicoSum %>%
-      pivot_wider(., names_from = "ESTADIO CLINICO",
-                  values_from = "CASOS")
+    #dataEstadioClinicoSumWider <- dataEstadioClinicoSum %>%
+    #  pivot_wider(., names_from = "ESTADIO CLINICO",
+    #              values_from = "CASOS")
     
 
     #print(colnames(dataEstadioClinicoSumWider))
@@ -771,6 +772,9 @@ server <- function(input, output, session) {
       filter(YEAR %in% input$in_map_year) %>%
       filter(SEXO %in% input$in_map_sexo)
 
+    #if(nrow(dataProvinciaTable) == 0)
+    #  stop("No es error, sino no hay resultado...")
+    
     dataProvinciaSexo <- dataProvinciaTable %>%
       distinct(SEXO)
     
@@ -819,21 +823,24 @@ server <- function(input, output, session) {
   
   dataEstadioClinicoTable <- reactive({
     
-    dataEstadioClinicoTmp <- dataEstadioClinico %>%
+    dataEstadioClinicoTmp <- dataEstadioClinicoWider %>%
       filter(TOPONIMIA %in% input$in_map_prov) %>%
-      filter(YEAR %in% input$in_map_year) %>%
-      rename(CASOS = VAL) %>%
-      arrange(YEAR, TOPONIMIA, TIPO) %>%
-      rename("ESTADIO CLINICO" = TIPO)
+      filter(YEAR %in% input$in_map_year)
+      #rename(CASOS = VAL) %>%
+      #arrange(YEAR, TOPONIMIA, TIPO) %>%
+      #rename("ESTADIO CLINICO" = TIPO)
     
-    dataEstadioClinicoWider <- dataEstadioClinicoTmp %>%
-      pivot_wider(., names_from = "ESTADIO CLINICO",
-                  values_from = "CASOS") %>%
+    #if(nrow(dataEstadioClinicoTmp) == 0)
+    #  stop("No es error, sino no hay resultado...")
+    
+    dataEstadioClinicoTmpWider <- dataEstadioClinicoTmp %>%
+    #  pivot_wider(., names_from = "ESTADIO CLINICO",
+    #              values_from = "CASOS") %>%
       rename("DESCONOCIDO" = IX) %>%
       mutate("TOTAL CASOS" = DESCONOCIDO + I + II + III + IV) %>%
       select(YEAR, TOPONIMIA, I, II, III, IV, DESCONOCIDO, "TOTAL CASOS")
     
-    dataEstadioClinicoWider <- with(dataEstadioClinicoWider, dataEstadioClinicoWider[order(YEAR,TOPONIMIA),])
+    dataEstadioClinicoTmpWider <- with(dataEstadioClinicoTmpWider, dataEstadioClinicoTmpWider[order(YEAR,TOPONIMIA),])
   })
   
   output$out_table_Estadio <- renderTable({

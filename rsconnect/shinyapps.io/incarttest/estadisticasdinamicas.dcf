@@ -5,7 +5,7 @@ account: incarttest
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 8048097
-bundleId: 6912046
+bundleId: 7119243
 url: https://incarttest.shinyapps.io/estadisticasdinamicas/
-when: 1677856179.72071
-lastSyncTime: 1677856179.72073
+when: 1682099689.76431
+lastSyncTime: 1682099689.76435
